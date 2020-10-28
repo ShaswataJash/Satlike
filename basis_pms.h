@@ -199,6 +199,8 @@ class Satlike
 	void free_memory(); //interface for python
 
 	//Shaswata - interface for python
+	unsigned int get_max_flips() { return (max_flips);}
+	
 	int  get_num_vars(){ return (num_vars);}
 	int  get_num_clauses() {return (num_clauses);}
 	int  get_num_hclauses() {return (num_hclauses);}
