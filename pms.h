@@ -788,7 +788,7 @@ void Satlike::init_with_decimation_stepwise()
     init(init_solution);
 }
 
-bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, bool toPrint)
+bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, int current_step, bool toPrint)
 {
     update_hyper_param(t, sp, hinc, eta);
 
@@ -828,17 +828,16 @@ bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, bool to
         {
             local_soln_feasible=1;
             local_opt_unsat_weight=soft_unsat_weight;
-            max_flips=step+max_non_improve_flip;
+            max_flips=current_step+max_non_improve_flip;
         }
     }
 
     int flipvar = pick_var();
     flip(flipvar);
-    time_stamp[flipvar] = step;
+    time_stamp[flipvar] = current_step;
     return (false);
 }
 
-//Shaswata - modification using stepwise functions
 void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool randomOnEveryRun)
 {
     init_decimation(randomOnEveryRun);
@@ -846,13 +845,14 @@ void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool random
     for(tries=1;tries<max_tries;++tries)
     {
         init_with_decimation_stepwise();
-        for (step = 1; step<max_flips; ++step)
+        for (unsigned int current_step = 1; current_step<get_max_flips(); ++current_step)
         {
             if(local_search_stepwise(
                     hd_count_threshold,
                     smooth_probability,
                     h_inc,
                     softclause_weight_threshold,
+                    current_step,
                     toPrint)){
                 break;
             }

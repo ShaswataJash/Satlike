@@ -189,7 +189,7 @@ class Satlike
 
 	void init_decimation(bool randomOnEveryRun=false);//Shaswata - interface for python
 	void init_with_decimation_stepwise();//Shaswata	- interface for python
-	bool local_search_stepwise(int t, float sp,  int hinc, int eta, bool toPrint);//Shaswata - interface for python
+	bool local_search_stepwise(int t, float sp,  int hinc, int eta, int current_step, bool toPrint);//Shaswata - interface for python
 
 	//Following function is to compare behavior of our stepwise modification with local_search_with_decimation
 	void local_search_with_decimation_using_steps(bool toPrint, bool randomOnEveryRun);//Shaswata
@@ -200,12 +200,12 @@ class Satlike
 
 	//Shaswata - interface for python
 	unsigned int get_max_flips() { return (max_flips);}
-	
+
 	int  get_num_vars(){ return (num_vars);}
 	int  get_num_clauses() {return (num_clauses);}
 	int  get_num_hclauses() {return (num_hclauses);}
 	int  get_num_sclauses() {return (num_sclauses);}
-	
+
 	long long get_opt_unsat_weight() { return (opt_unsat_weight);}
 
 };
