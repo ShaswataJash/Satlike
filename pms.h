@@ -62,6 +62,9 @@ void Satlike::settings()
         rwprob=0.1;
         smooth_probability=0.0000001;
     }
+
+    cout << "h_inc=" << h_inc << " softclause_weight_threshold=" << softclause_weight_threshold <<endl;
+    cout << "hd_count_threshold=" << hd_count_threshold << " smooth_probability=" << smooth_probability << endl;
 }
 
 void Satlike::update_hyper_param(int t, float sp,  int hinc, int eta)
@@ -797,9 +800,6 @@ bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, int cur
         {
             best_soln_feasible=1;
             opt_unsat_weight = soft_unsat_weight;
-            if(toPrint){//Shaswata because we do not want any print from python
-                cout<<"c opt-wt="<<opt_unsat_weight<< " time-took=" << get_runtime() << endl;
-            }
             for(int v=1; v<=num_vars; ++v) best_soln[v] = cur_soln[v];
             feasible_flag=1;
             return (true);
@@ -808,9 +808,7 @@ bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, int cur
         {
             best_soln_feasible=1;
             opt_unsat_weight = soft_unsat_weight;
-            if(toPrint){//Shaswata because we do not want any print from python
-               cout<<"c opt-wt="<<opt_unsat_weight<< " time-took=" << get_runtime() << endl;
-            }
+
             for(int v=1; v<=num_vars; ++v) best_soln[v] = cur_soln[v];
 
             if(opt_unsat_weight==0)
@@ -840,20 +838,33 @@ bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, int cur
 void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool randomOnEveryRun)
 {
     init_decimation(randomOnEveryRun);
-
+    long long last_soft_unsat_weight = get_total_soft_weight()+1;
     for(int tries=1;tries<max_tries;++tries)
     {
         init_with_decimation_stepwise();
         for (unsigned int current_step = 1; current_step<get_max_flips(); ++current_step)
         {
-            if(local_search_stepwise(
+            bool toBreak = local_search_stepwise(
                     hd_count_threshold,
                     smooth_probability,
                     h_inc,
                     softclause_weight_threshold,
                     current_step,
-                    toPrint)){
-                break;
+                    toPrint);
+
+            if (get_opt_unsat_weight() < last_soft_unsat_weight) {
+                if(toPrint){
+                    cout << "opt_unsat_weight=" << get_opt_unsat_weight() << " time-took=" << get_runtime() << endl;
+                }
+                last_soft_unsat_weight = get_opt_unsat_weight();
+            }
+
+            if (0 == get_opt_unsat_weight()){
+                return;
+            }
+
+            if(toBreak){
+                continue;
             }
         }
     }

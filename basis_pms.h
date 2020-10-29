@@ -205,6 +205,7 @@ class Satlike
 	int  get_num_hclauses() {return (num_hclauses);}
 	int  get_num_sclauses() {return (num_sclauses);}
 
+	long long get_total_soft_weight() { return (total_soft_weight);}
 	long long get_opt_unsat_weight() { return (opt_unsat_weight);}
 
 };

@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
 	signal(SIGTERM,interrupt);
 	s.build_instance(argv[1]);
 	//s.local_search_with_decimation(init_solution,argv[1]); //ORIGINAL
-	s.local_search_with_decimation_using_steps(true, true);
+	s.local_search_with_decimation_using_steps(true, false);
 	s.print_best_solution();
 	s.free_memory();
 	
