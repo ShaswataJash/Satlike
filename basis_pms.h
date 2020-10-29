@@ -51,7 +51,6 @@ class Satlike
 
 	//steps and time
 	struct tms start_time; //Shaswata - avoiding global variables for accessing from python
-	int tries;
 	int max_tries;
 	unsigned int max_flips;
 	unsigned int max_non_improve_flip;

@@ -30,7 +30,6 @@ Satlike::Satlike()
 void Satlike::settings()
 {
     //steps
-    tries=0;
     max_tries = 100000000;
     max_flips = 200000000;
     max_non_improve_flip = 10000000;
@@ -842,7 +841,7 @@ void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool random
 {
     init_decimation(randomOnEveryRun);
 
-    for(tries=1;tries<max_tries;++tries)
+    for(int tries=1;tries<max_tries;++tries)
     {
         init_with_decimation_stepwise();
         for (unsigned int current_step = 1; current_step<get_max_flips(); ++current_step)
@@ -867,7 +866,7 @@ void Satlike::local_search_with_decimation(vector<int>& init_solution, char* inp
     Decimation deci(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight);
     deci.make_space(num_clauses,num_vars);
 
-    for(tries=1;tries<max_tries;++tries)
+    for(int tries=1;tries<max_tries;++tries)
     {
         if(feasible_flag!=1)
         {
