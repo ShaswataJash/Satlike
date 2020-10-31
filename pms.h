@@ -852,9 +852,13 @@ void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool random
                     current_step,
                     toPrint);
 
-            if (get_opt_unsat_weight() < last_soft_unsat_weight) {
+            if ((get_hard_unsat_nb() == 0) && (get_opt_unsat_weight() < last_soft_unsat_weight)) {
                 if(toPrint){
-                    cout << "opt_unsat_weight=" << get_opt_unsat_weight() << " time-took=" << get_runtime() << endl;
+                    float fractSat = (float)(get_total_soft_weight() - get_opt_unsat_weight()) / (float)get_total_soft_weight();
+                    cout << "tries=" << tries << " current_step=" << current_step <<
+                            " opt_unsat_weight=" << get_opt_unsat_weight() <<
+                            " fractSat =" << fractSat << " time-took=" << get_runtime()
+                            << endl;
                 }
                 last_soft_unsat_weight = get_opt_unsat_weight();
             }
