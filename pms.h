@@ -790,7 +790,7 @@ void Satlike::init_with_decimation_stepwise()
     init(init_solution);
 }
 
-bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, int current_step, bool toPrint)
+bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, unsigned int current_step, bool toPrint)
 {
     update_hyper_param(t, sp, hinc, eta);
 
