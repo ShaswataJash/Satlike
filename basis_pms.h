@@ -214,6 +214,7 @@ class Satlike
 
 	long long get_top_clause_weight() { return (top_clause_weight);}
 	long long get_total_soft_weight() { return (total_soft_weight);}
+	long long get_soft_unsat_weight() { return (soft_unsat_weight);}
 	long long get_opt_unsat_weight() { return (opt_unsat_weight);}
 
 	int get_best_sol(int var_id){ return (best_soln[var_id]);}
