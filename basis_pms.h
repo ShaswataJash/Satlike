@@ -186,7 +186,7 @@ class Satlike
 	void local_search(vector<int>& init_solution);
 	void local_search_with_decimation(vector<int>& init_solution, char* inputfile);
 
-	void init_decimation(bool randomOnEveryRun=false);//Shaswata - interface for python
+	void init_decimation(bool randomOnEveryRun=false, bool todebug=false);//Shaswata - interface for python
 	void init_with_decimation_stepwise();//Shaswata	- interface for python
 	bool local_search_stepwise(int t, float sp,  int hinc, int eta, unsigned int current_step, bool toPrint);//Shaswata - interface for python
 

@@ -62,9 +62,6 @@ void Satlike::settings()
         rwprob=0.1;
         smooth_probability=0.0000001;
     }
-
-    cout << "h_inc=" << h_inc << " softclause_weight_threshold=" << softclause_weight_threshold <<endl;
-    cout << "hd_count_threshold=" << hd_count_threshold << " smooth_probability=" << smooth_probability << endl;
 }
 
 void Satlike::update_hyper_param(int t, float sp,  int hinc, int eta)
@@ -762,7 +759,7 @@ void Satlike::print_best_solution()
     cout << flush;
 }
 
-void Satlike::init_decimation(bool randomOnEveryRun)
+void Satlike::init_decimation(bool randomOnEveryRun, bool debug)
 {
     if(randomOnEveryRun){
         srand((unsigned int)time(NULL));//set to get random numbers on every run
@@ -771,6 +768,13 @@ void Satlike::init_decimation(bool randomOnEveryRun)
     settings();
     deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight);
     deci->make_space(num_clauses,num_vars);
+
+    if(debug){
+        cout << "h_inc=" << h_inc << " softclause_weight_threshold=" << softclause_weight_threshold <<endl;
+        cout << "hd_count_threshold=" << hd_count_threshold << " smooth_probability=" << smooth_probability << endl;
+        cout << "var_count=" << num_vars << " hclause_count=" << num_hclauses << " sclause_count=" << num_sclauses << endl;
+        cout << "max_soft_wt=" << top_clause_weight   << " total_soft_wt=" << total_soft_weight << endl;
+    }
 }
 
 void Satlike::init_with_decimation_stepwise()
@@ -837,7 +841,7 @@ bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, unsigne
 
 void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool randomOnEveryRun)
 {
-    init_decimation(randomOnEveryRun);
+    init_decimation(randomOnEveryRun, toPrint);
     long long last_soft_unsat_weight = get_total_soft_weight()+1;
     for(int tries=1;tries<max_tries;++tries)
     {
