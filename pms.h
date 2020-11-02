@@ -24,7 +24,12 @@ Satlike::Satlike()
     print_time=240;
     cutoff_time=300;
 
-    deci = NULL; //Shaswata
+    //Shaswata
+    deci = NULL;
+    top_clause_weight = 0;
+    total_soft_weight = 0;
+    soft_unsat_weight = 0;
+    opt_unsat_weight = 0;
 }
 
 void Satlike::settings()
