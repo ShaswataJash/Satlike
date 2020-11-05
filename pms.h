@@ -85,12 +85,26 @@ void Satlike::allocate_memory()
     unit_clause = new lit[malloc_clause_length];
 
     var_lit = new lit* [malloc_var_length];
+    for(int i=0; i< malloc_var_length; ++i){
+        var_lit[i] = NULL;
+    }
+
     var_lit_count = new int [malloc_var_length];
+
     clause_lit = new lit* [malloc_clause_length];
+    for(int i=0; i< malloc_clause_length; ++i){
+        clause_lit[i] = NULL;
+    }
+
     clause_lit_count = new int [malloc_clause_length];
 
     score = new long long [malloc_var_length];
+
     var_neighbor = new int* [malloc_var_length];
+    for(int i=0; i< malloc_var_length; ++i){
+        var_neighbor[i] = NULL;
+    }
+
     var_neighbor_count = new int [malloc_var_length];
     time_stamp = new long long [malloc_var_length];
     neighbor_flag = new int [malloc_var_length];
@@ -129,24 +143,37 @@ void Satlike::allocate_memory()
 
 void Satlike::free_memory()
 {
-    int i;
-    for (i = 0; i < num_clauses; i++)
-        delete[] clause_lit[i];
+    int malloc_var_length = num_vars+10;
+    int malloc_clause_length = num_clauses+10;
 
-    for(i=1; i<=num_vars; ++i)
-    {
-        delete[] var_lit[i];
-        delete[] var_neighbor[i];
+    delete[] unit_clause;
+
+    for(int i=0; i< malloc_var_length; ++i){
+        if (var_lit[i] != NULL){
+            delete[] var_lit[i];
+        }
     }
-
-    delete [] var_lit;
+    delete[] var_lit;
     delete [] var_lit_count;
-    delete [] clause_lit;
-    delete [] clause_lit_count;
+
+    for(int i=0; i< malloc_clause_length; ++i){
+        if (clause_lit[i] != NULL){
+            delete[] clause_lit[i];
+        }
+    }
+    delete[] clause_lit;
+    delete[] clause_lit_count;
 
     delete [] score;
+
+    for(int i=0; i< malloc_var_length; ++i){
+        if (var_neighbor[i] != NULL){
+            delete[] var_neighbor[i];
+        }
+    }
     delete [] var_neighbor;
     delete [] var_neighbor_count;
+
     delete [] time_stamp;
     delete [] neighbor_flag;
     delete [] temp_neighbor;
@@ -182,8 +209,9 @@ void Satlike::free_memory()
     delete [] best_array;
     delete [] temp_lit;
 
-    delete deci; //Shaswata
-    deci = NULL;
+    if (deci != NULL){
+        delete deci; //Shaswata
+    }
 }
 
 void Satlike::build_neighbor_relation()
