@@ -268,7 +268,7 @@ void Satlike::build_instance(const char *filename)
     //if(infile==NULL) //modification done by Shaswata
     if(!infile.good())
     {
-        cout<<"c the input filename "<<filename<<" is invalid, please input the correct filename."<<endl;
+        cout<<"c the input filename "<<filename<<" is invalid, please input the correct filename."<<endl<<flush;
         exit(-1);
     }
 

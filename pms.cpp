@@ -13,7 +13,7 @@ void interrupt(int sig)
 
 int main(int argc, char* argv[])
 {
-	cout<<"This is Satlike3.0 solver"<<endl;
+	cout<<"This is Satlike3.0 solver"<<endl<<flush;
 	vector<int> init_solution;
 	signal(SIGTERM,interrupt);
 	s.build_instance(argv[1]);
