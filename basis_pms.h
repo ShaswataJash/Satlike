@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <sys/times.h> //these two h files are for timing in linux
 #include <unistd.h>
+#include <cassert>
 
 using namespace std;
 

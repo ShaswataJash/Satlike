@@ -3,7 +3,7 @@
 
 #include "basis_pms.h"
 #include "deci.h"
-#include<sstream>
+#include <sstream>
 
 Satlike::Satlike()
 {
@@ -256,13 +256,15 @@ void Satlike::build_neighbor_relation()
 void Satlike::build_instance(const char *filename)
 {
     istringstream iss;
-    char    line[1024];
+    char    line[1024 + 1]; //Shaswata - 1 byte additional for '\0'
     string  line2;
     char    tempstr1[10];
     char    tempstr2[10];
     int     cur_lit;
     int     i,v,c;
     //int     temp_lit[MAX_VARS];
+
+    assert(filename != NULL); //Shaswata
 
     ifstream infile(filename);
     //if(infile==NULL) //modification done by Shaswata
@@ -280,13 +282,15 @@ void Satlike::build_instance(const char *filename)
     {
         getline(infile,line2);
     }
-    for(i=0;i<1024;i++)
+
+    assert(line2.length() <= (sizeof(line)-1));//Shaswata
+    for(i=0;i<line2.length();i++)
     {
         line[i]=line2[i];
     }
-    int read_items;
+    line[line2.length()] = '\0'; //Shaswata
 
-    read_items=sscanf(line, "%s %s %d %d %lld", tempstr1, tempstr2, &num_vars, &num_clauses, &top_clause_weight);
+    int read_items=sscanf(line, "%s %s %d %d %lld", tempstr1, tempstr2, &num_vars, &num_clauses, &top_clause_weight);
 
     if(read_items<5)
     {
