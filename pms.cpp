@@ -18,7 +18,8 @@ int main(int argc, char* argv[])
 	signal(SIGTERM,interrupt);
 	s.build_instance(argv[1]);
 	//s.local_search_with_decimation(init_solution,argv[1]); //ORIGINAL
-	s.local_search_with_decimation_using_steps(true, false);
+	int max_time_to_run = (argc == 3)? atoi(argv[2]) : 60;
+	s.local_search_with_decimation_using_steps(true, false, max_time_to_run);
 	s.print_best_solution();
 	s.free_memory();
 	

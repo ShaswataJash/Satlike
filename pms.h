@@ -876,7 +876,7 @@ bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, unsigne
     return (false);
 }
 
-void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool randomOnEveryRun)
+void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool randomOnEveryRun, int maxTimeToRunInSec)
 {
     init_decimation(randomOnEveryRun, toPrint);
     long long last_soft_unsat_weight = get_total_soft_weight()+1;
@@ -909,7 +909,11 @@ void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool random
             }
 
             if(toBreak){
-                continue;
+                break;
+            }
+
+            if(get_runtime() > maxTimeToRunInSec){
+                return;
             }
         }
     }

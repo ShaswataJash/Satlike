@@ -192,7 +192,7 @@ class Satlike
 	bool local_search_stepwise(int t, float sp,  int hinc, int eta, unsigned int current_step, bool toPrint);//Shaswata - interface for python
 
 	//Following function is to compare behavior of our stepwise modification with local_search_with_decimation
-	void local_search_with_decimation_using_steps(bool toPrint, bool randomOnEveryRun);//Shaswata
+	void local_search_with_decimation_using_steps(bool toPrint, bool randomOnEveryRun, int maxTimeToRunInSec);//Shaswata
 
 	void simple_print();
 	void print_best_solution();
