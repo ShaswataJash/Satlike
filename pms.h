@@ -444,7 +444,7 @@ void Satlike::build_instance(const char *filename)
     opt_unsat_weight=total_soft_weight+1;
 }
 
-void Satlike::init(vector<int>& init_solution)
+void Satlike::init(vector<int>& i_solution)
 {
     int 		v,c;
     int			i,j;
@@ -501,7 +501,7 @@ void Satlike::init(vector<int>& init_solution)
         }
         feasible_flag=2;
     }
-    else if(init_solution.size()==0)
+    else if(i_solution.size()==0)
     {
         for (v = 1; v <= num_vars; v++) 
         {
@@ -514,7 +514,7 @@ void Satlike::init(vector<int>& init_solution)
     {
         for (v = 1; v <= num_vars; v++) 
         {
-            cur_soln[v]=init_solution[v];
+            cur_soln[v]=i_solution[v];
             time_stamp[v] = 0;
             unsat_app_count[v] = 0;
         }
@@ -831,7 +831,7 @@ void Satlike::init_with_decimation_stepwise()
     init(init_solution);
 }
 
-bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, unsigned int current_step, bool toPrint)
+void Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, unsigned int current_step, bool toPrint)
 {
     update_hyper_param(t, sp, hinc, eta);
 
@@ -843,7 +843,7 @@ bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, unsigne
             opt_unsat_weight = soft_unsat_weight;
             for(int v=1; v<=num_vars; ++v) best_soln[v] = cur_soln[v];
             feasible_flag=1;
-            return (true);
+            return;
         }
         if (soft_unsat_weight<top_clause_weight)
         {
@@ -855,7 +855,7 @@ bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, unsigne
             if(opt_unsat_weight==0)
             {
                 //print_best_solution(); //Shaswata because we do not want any print from python
-                return (true);
+                return;
             }
         }
     }
@@ -873,7 +873,6 @@ bool Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, unsigne
     int flipvar = pick_var();
     flip(flipvar);
     time_stamp[flipvar] = current_step;
-    return (false);
 }
 
 void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool randomOnEveryRun, int maxTimeToRunInSec)
@@ -885,7 +884,7 @@ void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool random
         init_with_decimation_stepwise();
         for (unsigned int current_step = 1; current_step<get_max_flips(); ++current_step)
         {
-            bool toBreak = local_search_stepwise(
+            local_search_stepwise(
                     hd_count_threshold,
                     smooth_probability,
                     h_inc,
@@ -908,10 +907,6 @@ void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool random
                 return;
             }
 
-            if(toBreak){
-                break;
-            }
-
             if(get_runtime() > maxTimeToRunInSec){
                 return;
             }
@@ -919,7 +914,7 @@ void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool random
     }
 }
 
-void Satlike::local_search_with_decimation(vector<int>& init_solution, char* inputfile)
+void Satlike::local_search_with_decimation(vector<int>& i_solution, char* inputfile)
 {
     settings();
 
@@ -934,13 +929,13 @@ void Satlike::local_search_with_decimation(vector<int>& init_solution, char* inp
 
             deci.unit_prosess();
 
-            init_solution.resize(num_vars+1);
+            i_solution.resize(num_vars+1);
             for(int i=1;i<=num_vars;++i)
             {
-                init_solution[i]=deci.fix[i];
+                i_solution[i]=deci.fix[i];
             }
         }
-        init(init_solution);
+        init(i_solution);
         for (step = 1; step<max_flips; ++step)
         {
             if (hard_unsat_nb==0 && (soft_unsat_weight<opt_unsat_weight || best_soln_feasible==0) )
@@ -952,7 +947,8 @@ void Satlike::local_search_with_decimation(vector<int>& init_solution, char* inp
                     cout<<"c opt-wt="<<opt_unsat_weight<< " time-took=" << get_runtime() << endl;
                     for(int v=1; v<=num_vars; ++v) best_soln[v] = cur_soln[v];
                     feasible_flag=1;
-                    break;
+                    //break;
+                    continue; //Shaswata - this change helps to get more improvements
                 }
                 if (soft_unsat_weight<top_clause_weight)
                 {

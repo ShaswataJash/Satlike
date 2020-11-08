@@ -9,6 +9,7 @@ class Decimation
 {
     public:
     Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight);
+    ~Decimation(){free_memory();}//Shaswata
 
     void make_space(int max_c, int max_v);
     void free_memory();
