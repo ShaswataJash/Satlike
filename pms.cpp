@@ -19,7 +19,13 @@ int main(int argc, char* argv[])
 	s.build_instance(argv[1]);
 	//s.local_search_with_decimation(init_solution,argv[1]); //ORIGINAL
 	int max_time_to_run = (argc == 3)? atoi(argv[2]) : 60;
-	s.local_search_with_decimation_using_steps(true, true, max_time_to_run);
+	if(argc <= 3){
+	    s.local_search_with_decimation_using_steps(true, true, max_time_to_run);
+	}else{
+	    assert(argc == 7);
+	    s.local_search_with_decimation_using_steps(true, true, max_time_to_run,
+	            atoi(argv[3]), atof(argv[4]), atoi(argv[5]), atoi(argv[6]));
+	}
 	s.print_best_solution();
 	s.free_memory();
 	

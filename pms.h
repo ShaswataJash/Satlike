@@ -875,7 +875,8 @@ void Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, unsigne
     time_stamp[flipvar] = current_step;
 }
 
-void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool randomOnEveryRun, int maxTimeToRunInSec)
+void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool randomOnEveryRun, int maxTimeToRunInSec,
+        int t, float sp,  int hinc, int eta)
 {
     init_decimation(randomOnEveryRun, toPrint);
     long long last_soft_unsat_weight = get_total_soft_weight()+1;
@@ -885,10 +886,10 @@ void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool random
         for (unsigned int current_step = 1; current_step<get_max_flips(); ++current_step)
         {
             local_search_stepwise(
-                    hd_count_threshold,
-                    smooth_probability,
-                    h_inc,
-                    softclause_weight_threshold,
+                    (t == -1) ? hd_count_threshold : t,
+                    (sp < 0) ? smooth_probability : sp,
+                    (hinc == -1) ? h_inc: hinc,
+                    (eta == -1) ? softclause_weight_threshold: eta,
                     current_step,
                     toPrint);
 
