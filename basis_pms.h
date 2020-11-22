@@ -55,7 +55,7 @@ class Satlike
 	int max_tries;
 	unsigned int max_flips;
 	unsigned int max_non_improve_flip;
-	unsigned int step;
+	//unsigned int step; //Shaswata - no need to present in class variable, can be defined locally in function
 
 	int print_time;
 	int print_time1;
@@ -185,18 +185,21 @@ class Satlike
 	Satlike();//interface for python
 	void build_instance(const char *filename); //interface for python
 	void local_search(vector<int>& init_solution);
-	void local_search_with_decimation(vector<int>& init_solution, char* inputfile);
+	void local_search_with_decimation(vector<int>& init_solution, char* inputfile, bool randomWithEveryRun, int max_time_to_run,
+	        int verbose = 0, bool verification_to_be_done = false);
 
-	void init_decimation(bool randomOnEveryRun=false, bool todebug=false);//Shaswata - interface for python
-	void init_with_decimation_stepwise();//Shaswata	- interface for python
-	void local_search_stepwise(int t, float sp,  int hinc, int eta, unsigned int current_step, bool toPrint);//Shaswata - interface for python
+	void init_decimation(bool todebug=false);//Shaswata - interface for python
+	void init_with_decimation_stepwise(bool randomOnEveryRun);//Shaswata	- interface for python
+	long long local_search_stepwise(int t, float sp,  int hinc, int eta,
+	        unsigned int current_step, int verbose=0);//Shaswata - interface for python
 
 	//Following function is to compare behavior of our stepwise modification with local_search_with_decimation
-	void local_search_with_decimation_using_steps(bool toPrint, bool randomOnEveryRun, int maxTimeToRunInSec,
-	        int t=-1, float sp=-1,  int hinc=-1, int eta=-1);//Shaswata
+	void local_search_with_decimation_using_steps(bool randomOnEveryRun, int maxTimeToRunInSec,
+	        int t=-1, float sp=-1,  int hinc=-1, int eta=-1,
+	        int verbose_level=0, bool verification_to_be_done = false);//Shaswata
 
 	void simple_print();
-	void print_best_solution();
+	void print_best_solution(bool print_var_assign = false);
 	void free_memory(); //interface for python
 
 	//Shaswata - interface for python

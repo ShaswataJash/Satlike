@@ -37,9 +37,9 @@ void Satlike::settings()
     //steps
     max_tries = 100000000;
     max_flips = 200000000;
-    max_non_improve_flip = 10000000;
+    //max_non_improve_flip = 10000000;
+    max_non_improve_flip = 10000; //Shaswata - experimental
     max_flips = max_non_improve_flip;
-    step=1;
 
     large_clause_count_threshold=0;
     soft_large_clause_count_threshold=0;
@@ -212,6 +212,7 @@ void Satlike::free_memory()
     if (deci != NULL){
         delete deci; //Shaswata
     }
+
 }
 
 void Satlike::build_neighbor_relation()
@@ -569,6 +570,8 @@ void Satlike::init(vector<int>& i_solution)
         else
             already_in_goodvar_stack[v] = -1;
     }
+
+    max_flips=max_non_improve_flip; //Shaswata - it was not reinited
 }
 
 int Satlike::pick_var()
@@ -779,11 +782,16 @@ void Satlike::local_search(vector<int>& init_solution)
     cout<<"goodvar nb is "<<goodvar_stack_fill_pointer<<endl;
 }
 
-void Satlike::print_best_solution()
+void Satlike::print_best_solution(bool print_var_assign)
 {
     //verify_sol();
     if(best_soln_feasible==0) return ;
     cout<<"o "<<opt_unsat_weight<<endl;
+
+    if (!print_var_assign){
+        return;
+    }
+
     std::stringstream s;
     s<<"v";
     for(int i=1;i<=num_vars;++i)
@@ -796,12 +804,8 @@ void Satlike::print_best_solution()
     cout << flush;
 }
 
-void Satlike::init_decimation(bool randomOnEveryRun, bool debug)
+void Satlike::init_decimation(bool debug)
 {
-    if(randomOnEveryRun){
-        srand((unsigned int)time(NULL));//set to get random numbers on every run
-    }
-
     settings();
     deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight);
     deci->make_space(num_clauses,num_vars);
@@ -814,8 +818,12 @@ void Satlike::init_decimation(bool randomOnEveryRun, bool debug)
     }
 }
 
-void Satlike::init_with_decimation_stepwise()
+void Satlike::init_with_decimation_stepwise(bool randomOnEveryRun)
 {
+    if(randomOnEveryRun){
+        srand((unsigned int)time(NULL));//set to get random numbers on every run
+    }
+
     if(feasible_flag!=1)
     {
         deci->init(local_opt_soln,best_soln,unit_clause,unit_clause_count,clause_lit_count);
@@ -831,31 +839,33 @@ void Satlike::init_with_decimation_stepwise()
     init(init_solution);
 }
 
-void Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, unsigned int current_step, bool toPrint)
+long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, unsigned int current_step, int verbose)
 {
     update_hyper_param(t, sp, hinc, eta);
-
+    long long result = -1;
     if (hard_unsat_nb==0 && (soft_unsat_weight<opt_unsat_weight || best_soln_feasible==0) )
     {
         if(best_soln_feasible==0)
         {
             best_soln_feasible=1;
             opt_unsat_weight = soft_unsat_weight;
+            result = opt_unsat_weight;
             for(int v=1; v<=num_vars; ++v) best_soln[v] = cur_soln[v];
             feasible_flag=1;
-            return;
+            if(opt_unsat_weight==0){
+                return (0);
+            }
         }
-        if (soft_unsat_weight<top_clause_weight)
+        //if (soft_unsat_weight<top_clause_weight) //Shaswata - experimental
+        else if (soft_unsat_weight<opt_unsat_weight)
         {
             best_soln_feasible=1;
             opt_unsat_weight = soft_unsat_weight;
-
+            result = opt_unsat_weight;
             for(int v=1; v<=num_vars; ++v) best_soln[v] = cur_soln[v];
 
-            if(opt_unsat_weight==0)
-            {
-                //print_best_solution(); //Shaswata because we do not want any print from python
-                return;
+            if(opt_unsat_weight==0){
+                return (0);
             }
         }
     }
@@ -867,41 +877,47 @@ void Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, unsigne
             local_soln_feasible=1;
             local_opt_unsat_weight=soft_unsat_weight;
             max_flips=current_step+max_non_improve_flip;
+            if(verbose > 1) cout << "c changing max_flips=" << max_flips << " soft_unsat_weight=" << soft_unsat_weight << endl;
         }
     }
 
     int flipvar = pick_var();
     flip(flipvar);
     time_stamp[flipvar] = current_step;
+    return (result);
 }
 
-void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool randomOnEveryRun, int maxTimeToRunInSec,
-        int t, float sp,  int hinc, int eta)
+void Satlike::local_search_with_decimation_using_steps(bool randomOnEveryRun, int maxTimeToRunInSec,
+        int t, float sp,  int hinc, int eta, int verbose_level, bool verification_to_be_done)
 {
-    init_decimation(randomOnEveryRun, toPrint);
+    long long iteration_count = 0;
+    init_decimation(verbose_level > 0);
     long long last_soft_unsat_weight = get_total_soft_weight()+1;
     for(int tries=1;tries<max_tries;++tries)
     {
-        init_with_decimation_stepwise();
+        init_with_decimation_stepwise(randomOnEveryRun);
+        if(verbose_level > 1) cout<<"c iteration_count=" << iteration_count << " try=" << tries << " hard_unsat_nb=" << hard_unsat_nb << endl << flush;
         for (unsigned int current_step = 1; current_step<get_max_flips(); ++current_step)
         {
-            local_search_stepwise(
+            ++iteration_count;
+            long long result = local_search_stepwise(
                     (t == -1) ? hd_count_threshold : t,
                     (sp < 0) ? smooth_probability : sp,
                     (hinc == -1) ? h_inc: hinc,
                     (eta == -1) ? softclause_weight_threshold: eta,
                     current_step,
-                    toPrint);
+                    verbose_level);
 
-            if ((get_hard_unsat_nb() == 0) && (get_opt_unsat_weight() < last_soft_unsat_weight)) {
-                if(toPrint){
-                    float fractSat = (float)(get_total_soft_weight() - get_opt_unsat_weight()) / (float)get_total_soft_weight();
-                    cout << "tries=" << tries << " current_step=" << current_step <<
-                            " opt_unsat_weight=" << get_opt_unsat_weight() <<
+            if ((result >= 0) && (result < last_soft_unsat_weight)) {
+                if(verbose_level > 0){
+                    float fractSat = (float)(get_total_soft_weight() - result) / (float)get_total_soft_weight();
+                    cout << "iteration_count=" << iteration_count << " tries=" << tries << " current_step=" << current_step <<
+                            " opt_unsat_weight=" << result <<
                             " fractSat =" << fractSat << " time-took=" << get_runtime()
                             << endl;
                 }
-                last_soft_unsat_weight = get_opt_unsat_weight();
+                if(verification_to_be_done) assert(verify_sol() == 1);
+                last_soft_unsat_weight = result;
             }
 
             if (0 == get_opt_unsat_weight()){
@@ -909,23 +925,35 @@ void Satlike::local_search_with_decimation_using_steps(bool toPrint, bool random
             }
 
             if(get_runtime() > maxTimeToRunInSec){
+                if (verbose_level > 0) cout<<"c iteration_count=" << iteration_count << endl << flush;
                 return;
             }
         }
     }
 }
 
-void Satlike::local_search_with_decimation(vector<int>& i_solution, char* inputfile)
+void Satlike::local_search_with_decimation(vector<int>& i_solution, char* inputfile, bool randomWithEveryRun, int max_time_to_run,
+        int verbose, bool verification_to_be_done)
 {
     settings();
 
     Decimation deci(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight);
     deci.make_space(num_clauses,num_vars);
-
+    long long iteration_count = 0;
+    int num_of_unsuccessful_consecutive_try = 0;//Shaswata - experimental
     for(int tries=1;tries<max_tries;++tries)
     {
+        if(verbose > 1) cout<<"c iteration_count=" << iteration_count << " try=" << tries << " num_of_unsuccessful_consecutive_try=" << num_of_unsuccessful_consecutive_try << endl << flush;
+
+        if((num_of_unsuccessful_consecutive_try >= 2) && (randomWithEveryRun)){//Shaswata - experimental
+            srand((unsigned int)time(NULL));//set to get random numbers on every run
+        }
+
+        //Shaswata: note that initially feasible_flag=0, after that it trnsitions to 1
+        //when first valid solution found. Then it will be transitioned to 2
         if(feasible_flag!=1)
         {
+            if(verbose > 1) cout<<"c decimation process re-inited feasible_flag="<<feasible_flag << endl;
             deci.init(local_opt_soln,best_soln,unit_clause,unit_clause_count,clause_lit_count);
 
             deci.unit_prosess();
@@ -936,31 +964,37 @@ void Satlike::local_search_with_decimation(vector<int>& i_solution, char* inputf
                 i_solution[i]=deci.fix[i];
             }
         }
+
         init(i_solution);
-        for (step = 1; step<max_flips; ++step)
+        for (unsigned int step = 1; step<max_flips; ++step)
         {
+            ++iteration_count;
             if (hard_unsat_nb==0 && (soft_unsat_weight<opt_unsat_weight || best_soln_feasible==0) )
             {
                 if(best_soln_feasible==0)
                 {
                     best_soln_feasible=1;
                     opt_unsat_weight = soft_unsat_weight;
-                    cout<<"c opt-wt="<<opt_unsat_weight<< " time-took=" << get_runtime() << endl;
+                    if(verbose > 0) cout<<"c iteration_count=" << iteration_count << " try="<< tries << " step="<< step << " opt-wt="<<opt_unsat_weight<< " time-took=" << get_runtime() << endl;
                     for(int v=1; v<=num_vars; ++v) best_soln[v] = cur_soln[v];
+                    if(verification_to_be_done) assert(verify_sol() == 1);
                     feasible_flag=1;
-                    //break;
-                    continue; //Shaswata - this change helps to get more improvements
+                    num_of_unsuccessful_consecutive_try=-1;
+                    if(opt_unsat_weight==0){
+                        return;
+                    }
+                    //break; //Shaswata - experimental
                 }
-                if (soft_unsat_weight<top_clause_weight)
+                //if (soft_unsat_weight<top_clause_weight) //Shaswata - experimental
+                else if (soft_unsat_weight<opt_unsat_weight)
                 {
                     best_soln_feasible=1;
                     opt_unsat_weight = soft_unsat_weight;
-                    cout<<"c opt-wt="<<opt_unsat_weight<< " time-took=" << get_runtime() << endl;
+                    if(verbose > 0) cout<<"c iteration_count=" << iteration_count << " try="<< tries << " step="<< step << " opt-wt="<<opt_unsat_weight<< " time-took=" << get_runtime() << endl;
                     for(int v=1; v<=num_vars; ++v) best_soln[v] = cur_soln[v];
-
-                    if(opt_unsat_weight==0)
-                    {
-                        print_best_solution();
+                    if(verification_to_be_done) assert(verify_sol() == 1);
+                    num_of_unsuccessful_consecutive_try=-1;
+                    if(opt_unsat_weight==0){
                         return;
                     }
                 }
@@ -970,9 +1004,12 @@ void Satlike::local_search_with_decimation(vector<int>& i_solution, char* inputf
             {
                 if(soft_unsat_weight<top_clause_weight)
                 {
+                    //Shaswata: note that max-flip can be tried to increase even when soft_unsat_weight
+                    //may not be better than opt_unsat_weight
                     local_soln_feasible=1;
                     local_opt_unsat_weight=soft_unsat_weight;
                     max_flips=step+max_non_improve_flip;
+                    if(verbose > 1) cout << "c changing max_flips=" << max_flips << " soft_unsat_weight=" << soft_unsat_weight << endl;
                 }
             }
             if (step%1000==0)
@@ -988,7 +1025,13 @@ void Satlike::local_search_with_decimation(vector<int>& i_solution, char* inputf
             int flipvar = pick_var();
             flip(flipvar);
             time_stamp[flipvar] = step;
+
+            if(get_runtime() > max_time_to_run){
+                if(verbose > 0) cout<<"c iteration_count=" << iteration_count << endl << flush;
+                return;
+            }
         }
+        num_of_unsuccessful_consecutive_try ++;
     }
 }
 
@@ -1000,8 +1043,12 @@ bool Satlike::verify_sol()
     for (c = 0; c<num_clauses; ++c)
     {
         flag = 0;
-        for(j=0; j<clause_lit_count[c]; ++j)
-            if (best_soln[clause_lit[c][j].var_num] == clause_lit[c][j].sense) {flag = 1; break;}
+        for(j=0; j<clause_lit_count[c]; ++j){
+            if (best_soln[clause_lit[c][j].var_num] == clause_lit[c][j].sense) {
+                flag = 1;
+                break;
+            }
+        }
 
         if(flag ==0)
         {
