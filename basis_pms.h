@@ -218,7 +218,7 @@ class Satlike
 
 	//Shaswata - interface for python
 	unsigned int get_max_flips() { return (max_flips);}
-
+	unsigned int get_max_non_improve_flip() { return (max_non_improve_flip);}
 	float get_smooth_probability() { return (smooth_probability);}
 	int get_hd_count_threshold() { return (hd_count_threshold);}
 	int get_h_inc() { return (h_inc);}
