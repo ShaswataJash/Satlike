@@ -19,6 +19,12 @@ using namespace std;
 
 class Decimation; //Shaswata - forward declaration
 
+/*
+#include "DimacsParser.h" //Shaswata
+#include "core/Solver.h" //for minisat
+using namespace Minisat;
+*/
+
 #define mypop(stack) stack[--stack ## _fill_pointer]
 #define mypush(item, stack) stack[stack ## _fill_pointer++] = item
 
@@ -171,8 +177,8 @@ class Satlike
 	void update_goodvarstack1(int flipvar);
 	void update_goodvarstack2(int flipvar);
 	int pick_var();
-	void settings();
-	void update_hyper_param(int t, float sp, int hinc, int eta);//Shaswata - for RL
+	void settings(bool debug=false);
+	void update_hyper_param(int t, float sp, int hinc, int eta, int max_search);//Shaswata - for RL
 
 	double get_runtime()
 	{
@@ -181,21 +187,29 @@ class Satlike
 	    return (double)(stop.tms_utime-start_time.tms_utime+stop.tms_stime-start_time.tms_stime)/sysconf(_SC_CLK_TCK);
 	}
 
+	//=================== Shaswata ================
+	/*
+	int* finalFormattedResult ;
+	WeightedDimacsParser* dimParser;
+	void addOnlyHardClausesToSolver(Solver& solver);
+	void get_initial_search_space_using_solver(const char* inputfile, int verbose_level=0);*/
+	//=============================================
+
 	public:
 	Satlike();//interface for python
 	void build_instance(const char *filename); //interface for python
 	void local_search(vector<int>& init_solution);
-	void local_search_with_decimation(vector<int>& init_solution, char* inputfile, bool randomWithEveryRun, int max_time_to_run,
+	void local_search_with_decimation(vector<int>& init_solution, const char* inputfile, bool randomWithEveryRun, int max_time_to_run,
 	        int verbose = 0, bool verification_to_be_done = false);
 
-	void init_decimation(bool todebug=false);//Shaswata - interface for python
-	void init_with_decimation_stepwise(bool randomOnEveryRun);//Shaswata	- interface for python
-	long long local_search_stepwise(int t, float sp,  int hinc, int eta,
+	void init_decimation(bool randomOnEveryRun, bool todebug=false);//Shaswata - interface for python
+	void init_with_decimation_stepwise();//Shaswata	- interface for python
+	long long local_search_stepwise(int t, float sp,  int hinc, int eta, int max_search,
 	        unsigned int current_step, int verbose=0);//Shaswata - interface for python
 
 	//Following function is to compare behavior of our stepwise modification with local_search_with_decimation
 	void local_search_with_decimation_using_steps(bool randomOnEveryRun, int maxTimeToRunInSec,
-	        int t=-1, float sp=-1,  int hinc=-1, int eta=-1,
+	        int t=-1, float sp=-1,  int hinc=-1, int eta=-1, int max_search = -1,
 	        int verbose_level=0, bool verification_to_be_done = false);//Shaswata
 
 	void simple_print();

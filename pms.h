@@ -5,6 +5,8 @@
 #include "deci.h"
 #include <sstream>
 
+#define INITIAL_MAX_FLIP 10000000 //Shaswata
+
 Satlike::Satlike()
 {
     times(&start_time);
@@ -25,6 +27,8 @@ Satlike::Satlike()
     cutoff_time=300;
 
     //Shaswata
+    //finalFormattedResult = NULL;
+    //dimParser = NULL;
     deci = NULL;
     top_clause_weight = 0;
     total_soft_weight = 0;
@@ -32,14 +36,12 @@ Satlike::Satlike()
     opt_unsat_weight = 0;
 }
 
-void Satlike::settings()
+void Satlike::settings(bool debug)
 {
     //steps
     max_tries = 100000000;
-    max_flips = 200000000;
-    //max_non_improve_flip = 10000000;
-    max_non_improve_flip = 10000; //Shaswata - experimental
-    max_flips = max_non_improve_flip;
+    max_flips = INITIAL_MAX_FLIP;
+    max_non_improve_flip = 10000000;
 
     large_clause_count_threshold=0;
     soft_large_clause_count_threshold=0;
@@ -67,14 +69,22 @@ void Satlike::settings()
         rwprob=0.1;
         smooth_probability=0.0000001;
     }
+
+    if(debug){
+        cout << "h_inc=" << h_inc << " softclause_weight_threshold=" << softclause_weight_threshold <<endl;
+        cout << "hd_count_threshold=" << hd_count_threshold << " smooth_probability=" << smooth_probability << endl;
+        cout << "var_count=" << num_vars << " hclause_count=" << num_hclauses << " sclause_count=" << num_sclauses << endl;
+        cout << "max_soft_wt=" << top_clause_weight   << " total_soft_wt=" << total_soft_weight << endl;
+    }
 }
 
-void Satlike::update_hyper_param(int t, float sp,  int hinc, int eta)
+void Satlike::update_hyper_param(int t, float sp,  int hinc, int eta, int max_search)
 {
     hd_count_threshold=t;
     smooth_probability=sp;
     h_inc=hinc;
     softclause_weight_threshold=eta;
+    max_non_improve_flip = max_search;
 }
 
 void Satlike::allocate_memory()
@@ -209,9 +219,16 @@ void Satlike::free_memory()
     delete [] best_array;
     delete [] temp_lit;
 
+    //Shaswata
     if (deci != NULL){
-        delete deci; //Shaswata
+        delete deci;
     }
+    /*if (dimParser != NULL){
+        delete dimParser;
+    }
+    if (finalFormattedResult != NULL){
+        delete[] finalFormattedResult;
+    }*/
 
 }
 
@@ -571,7 +588,7 @@ void Satlike::init(vector<int>& i_solution)
             already_in_goodvar_stack[v] = -1;
     }
 
-    max_flips=max_non_improve_flip; //Shaswata - it was not reinited
+    max_flips=INITIAL_MAX_FLIP; //Shaswata - it was not reinited
 }
 
 int Satlike::pick_var()
@@ -804,26 +821,21 @@ void Satlike::print_best_solution(bool print_var_assign)
     cout << flush;
 }
 
-void Satlike::init_decimation(bool debug)
-{
-    settings();
-    deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight);
-    deci->make_space(num_clauses,num_vars);
-
-    if(debug){
-        cout << "h_inc=" << h_inc << " softclause_weight_threshold=" << softclause_weight_threshold <<endl;
-        cout << "hd_count_threshold=" << hd_count_threshold << " smooth_probability=" << smooth_probability << endl;
-        cout << "var_count=" << num_vars << " hclause_count=" << num_hclauses << " sclause_count=" << num_sclauses << endl;
-        cout << "max_soft_wt=" << top_clause_weight   << " total_soft_wt=" << total_soft_weight << endl;
-    }
-}
-
-void Satlike::init_with_decimation_stepwise(bool randomOnEveryRun)
+void Satlike::init_decimation(bool randomOnEveryRun, bool debug)
 {
     if(randomOnEveryRun){
         srand((unsigned int)time(NULL));//set to get random numbers on every run
+    }else{
+        srand(0);
     }
 
+    settings(debug);
+    deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight);
+    deci->make_space(num_clauses,num_vars);
+}
+
+void Satlike::init_with_decimation_stepwise()
+{
     if(feasible_flag!=1)
     {
         deci->init(local_opt_soln,best_soln,unit_clause,unit_clause_count,clause_lit_count);
@@ -839,9 +851,9 @@ void Satlike::init_with_decimation_stepwise(bool randomOnEveryRun)
     init(init_solution);
 }
 
-long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, unsigned int current_step, int verbose)
+long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, int max_search, unsigned int current_step, int verbose)
 {
-    update_hyper_param(t, sp, hinc, eta);
+    update_hyper_param(t, sp, hinc, eta, max_search);
     long long result = -1;
     if (hard_unsat_nb==0 && (soft_unsat_weight<opt_unsat_weight || best_soln_feasible==0) )
     {
@@ -888,14 +900,15 @@ long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, un
 }
 
 void Satlike::local_search_with_decimation_using_steps(bool randomOnEveryRun, int maxTimeToRunInSec,
-        int t, float sp,  int hinc, int eta, int verbose_level, bool verification_to_be_done)
+        int t, float sp,  int hinc, int eta, int max_search,
+        int verbose_level, bool verification_to_be_done)
 {
     long long iteration_count = 0;
-    init_decimation(verbose_level > 0);
+    init_decimation(randomOnEveryRun, verbose_level > 0);
     long long last_soft_unsat_weight = get_total_soft_weight()+1;
     for(int tries=1;tries<max_tries;++tries)
     {
-        init_with_decimation_stepwise(randomOnEveryRun);
+        init_with_decimation_stepwise();
         if(verbose_level > 1) cout<<"c iteration_count=" << iteration_count << " try=" << tries << " hard_unsat_nb=" << hard_unsat_nb << endl << flush;
         for (unsigned int current_step = 1; current_step<get_max_flips(); ++current_step)
         {
@@ -905,6 +918,7 @@ void Satlike::local_search_with_decimation_using_steps(bool randomOnEveryRun, in
                     (sp < 0) ? smooth_probability : sp,
                     (hinc == -1) ? h_inc: hinc,
                     (eta == -1) ? softclause_weight_threshold: eta,
+                    (max_search == -1)? max_non_improve_flip: max_search,
                     current_step,
                     verbose_level);
 
@@ -932,10 +946,15 @@ void Satlike::local_search_with_decimation_using_steps(bool randomOnEveryRun, in
     }
 }
 
-void Satlike::local_search_with_decimation(vector<int>& i_solution, char* inputfile, bool randomWithEveryRun, int max_time_to_run,
+void Satlike::local_search_with_decimation(vector<int>& i_solution, const char* inputfile, bool randomWithEveryRun, int max_time_to_run,
         int verbose, bool verification_to_be_done)
 {
-    settings();
+    if(randomWithEveryRun){
+        srand((unsigned int)time(NULL));//set to get random numbers on every run
+    }else{
+        srand(0);
+    }
+    settings(verbose > 0);
 
     Decimation deci(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight);
     deci.make_space(num_clauses,num_vars);
@@ -945,23 +964,27 @@ void Satlike::local_search_with_decimation(vector<int>& i_solution, char* inputf
     {
         if(verbose > 1) cout<<"c iteration_count=" << iteration_count << " try=" << tries << " num_of_unsuccessful_consecutive_try=" << num_of_unsuccessful_consecutive_try << endl << flush;
 
-        if((num_of_unsuccessful_consecutive_try >= 2) && (randomWithEveryRun)){//Shaswata - experimental
-            srand((unsigned int)time(NULL));//set to get random numbers on every run
-        }
-
-        //Shaswata: note that initially feasible_flag=0, after that it trnsitions to 1
+        //Shaswata: note that initially feasible_flag=0, after that it transitions to 1,
         //when first valid solution found. Then it will be transitioned to 2
         if(feasible_flag!=1)
         {
-            if(verbose > 1) cout<<"c decimation process re-inited feasible_flag="<<feasible_flag << endl;
-            deci.init(local_opt_soln,best_soln,unit_clause,unit_clause_count,clause_lit_count);
+            /*if(num_of_unsuccessful_consecutive_try >= 2) {//Shaswata - experimental
+                get_initial_search_space_using_solver(inputfile, verbose);
+                i_solution.resize(num_vars+1);
+                for(int i=1;i<=num_vars;++i){
+                    i_solution[i]= (finalFormattedResult[i] > 0) ? 1 : 0;
+                }
+            }else*/{
+                if(verbose > 1) cout<<"c decimation process re-inited feasible_flag="<<feasible_flag << endl;
+                deci.init(local_opt_soln,best_soln,unit_clause,unit_clause_count,clause_lit_count);
 
-            deci.unit_prosess();
+                deci.unit_prosess();
 
-            i_solution.resize(num_vars+1);
-            for(int i=1;i<=num_vars;++i)
-            {
-                i_solution[i]=deci.fix[i];
+                i_solution.resize(num_vars+1);
+                for(int i=1;i<=num_vars;++i)
+                {
+                    i_solution[i]=deci.fix[i];
+                }
             }
         }
 
@@ -1008,7 +1031,7 @@ void Satlike::local_search_with_decimation(vector<int>& i_solution, char* inputf
                     //may not be better than opt_unsat_weight
                     local_soln_feasible=1;
                     local_opt_unsat_weight=soft_unsat_weight;
-                    max_flips=step+max_non_improve_flip;
+                    max_flips=step+max_non_improve_flip; //Shaswata-experimental
                     if(verbose > 1) cout << "c changing max_flips=" << max_flips << " soft_unsat_weight=" << soft_unsat_weight << endl;
                 }
             }
@@ -1249,4 +1272,144 @@ inline void Satlike::sat(int clause)
     }
 }
 
+//============================== Shaswata ================================
+//Additional enhancement
+//========================================================================
+/*
+static unsigned long long findUnsatClauseCount(const int* finalFormattedResult, const vector<CNFClause>& originalClauses,
+        set<int>& unsatClauses, int debug) {
+    unsigned long long nonSatClauseWeight = 0;
+    if(debug >= 2){
+        cout << "c list of unsat soft-clauses:" << std::endl;
+    }
+    int totalClauseSize = originalClauses.size();
+
+    for (int clauseIndex = 0; clauseIndex < totalClauseSize; clauseIndex ++) {
+        set<int>::const_iterator s;
+        bool atleastOneVarTrue = false;
+        const set<int>& vars = originalClauses[clauseIndex].getVars();
+        for(s = vars.cbegin(); s != vars.cend(); s++){
+            int var = *s;
+            assert(var != 0);
+            if (var > 0) {
+                if (finalFormattedResult[var] == var) {
+                    atleastOneVarTrue = true;
+                    break;
+                }
+            } else {
+                if (finalFormattedResult[-var] == var) {
+                    atleastOneVarTrue = true;
+                    break;
+                }
+            }
+        }
+        if (!atleastOneVarTrue) {
+            if(debug >= 2){
+                cout << originalClauses[clauseIndex];
+            }
+            assert(!(originalClauses[clauseIndex]).isHard());//can be only soft
+            unsatClauses.insert(originalClauses[clauseIndex].getUniqueID());
+            nonSatClauseWeight += originalClauses[clauseIndex].getWeight();
+        }
+    }
+
+    if(debug){
+        cout <<"c nonSatClauseWeight = " << nonSatClauseWeight << " count of unsat-clauses = " << unsatClauses.size() << std::endl;
+        cout << std::flush;
+    }
+    return (nonSatClauseWeight);
+}
+
+
+void Satlike::addOnlyHardClausesToSolver(Solver& solver){
+
+    const vector<CNFClause>& originalClauses = dimParser->getOriginalClauses();
+    int originalClauseLen = originalClauses.size();
+    for(int i = 0; i < originalClauseLen; i++){
+
+        if(!originalClauses[i].isHard()){
+            continue;
+        }
+
+        set<int>::const_iterator clauseVarIt;
+        vec<Lit> c;
+        const set<int>& listOfLits = originalClauses[i].getVars();
+        for(clauseVarIt = listOfLits.cbegin(); clauseVarIt != listOfLits.cend(); clauseVarIt ++){
+            //Reference: readClause() function in core/Dimacs.h
+            int var = abs(*clauseVarIt)-1;
+            while (var >= solver.nVars()) solver.newVar();
+            c.push( (*clauseVarIt > 0) ? mkLit(var) : ~mkLit(var) );
+        }
+
+        solver.addClause(c);
+    }
+}
+
+void Satlike::get_initial_search_space_using_solver(const char* inputfile, int verbose_level){
+
+    if(dimParser == NULL){
+        FILE* fp=fopen(inputfile, "r");
+        assert(fp != NULL);
+        dimParser = new WeightedDimacsParser(true);
+        dimParser->parse(fp, false);
+        assert(dimParser->getOriginalClauseCount() == dimParser->getOriginalClauses().size());
+        assert((dimParser->getHardClauseCount() + dimParser->getSoftClauseCount()) == dimParser->getOriginalClauseCount());
+        fclose(fp);
+        finalFormattedResult = new int[dimParser->getOriginalVarCount() + 1];
+
+        if (verbose_level > 0){
+            cout << "c original clause count = " << dimParser->getOriginalClauseCount()
+                                                         << " var = " << dimParser->getOriginalVarCount()
+                                                         << " hard = " << dimParser->getHardClauseCount()
+                                                         << " soft = " << dimParser->getSoftClauseCount()
+                                                         << std::endl << std::flush;
+        }
+    }
+
+    dimParser->randomShuffleClauses();
+
+    try {
+        Solver minisatSolver;
+
+        addOnlyHardClausesToSolver( minisatSolver);
+        if (verbose_level > 0){
+            cout << "c solver clause count = " << minisatSolver.nClauses() << " var = " << minisatSolver.nVars() << endl << flush;
+        }
+        assert(dimParser->getOriginalVarCount() == minisatSolver.nVars());
+
+        bool ret = minisatSolver.solve();
+        assert(ret == true);
+
+        memset(finalFormattedResult, 0, (dimParser->getOriginalVarCount() + 1) * sizeof(int));
+
+        for (int i = 0; i < dimParser->getOriginalVarCount(); i++) {
+            assert(minisatSolver.model[i] != l_Undef);
+            finalFormattedResult[i+1] = (l_True == minisatSolver.model[i]) ? (i+1):-(i+1);
+        }
+
+        set<int> unsatSoftClauses;
+        unsigned long long actualWeightRelaxed = findUnsatClauseCount(finalFormattedResult, dimParser->getOriginalClauses(),
+                unsatSoftClauses, verbose_level);
+
+        if (verbose_level > 0){
+            cout << "c number of softclauses unsat = " << unsatSoftClauses.size() << std::endl;
+            cout << "o " << actualWeightRelaxed << std::endl;
+        }
+
+        if (verbose_level > 2){
+            cout << "v ";
+            for (int i = 1; i <= dimParser->getOriginalVarCount(); i++) {
+                assert(finalFormattedResult[i] != 0) ;
+                cout << finalFormattedResult[i] << " ";
+            }
+            cout << std::endl << std::flush;
+        }
+
+    }catch (exception& e) {
+        cerr << "get_initial_search_space_using_solver:" << e.what() << std::endl << std::flush;
+    } catch (...) {
+        cerr << "get_initial_search_space_using_solver: Exception occurred."<< std::endl << std::flush;
+    }
+}
+*/
 #endif

@@ -26,6 +26,7 @@ int main(int argc, char* argv[])
 	float sp = -1.0;
 	int hinc = -1;
 	int eta = -1;
+	int max_search=-1;
 	bool verification_to_be_done = false;
 	bool print_final_var_assignment = false;
 
@@ -34,7 +35,7 @@ int main(int argc, char* argv[])
 	int opt;
 	// Retrieve the options:
 	cout << "SELECTED-OPTIONS: ";
-	while ( (opt = getopt(argc, argv, "v:pcm:ort:s:h:e:")) != -1 ) {  // for each option...
+	while ( (opt = getopt(argc, argv, "v:pcm:ort:s:h:e:z:")) != -1 ) {  // for each option...
 	    switch ( opt ) {
 	    case 'v':
 	        verbose_level = atoi(optarg);
@@ -76,6 +77,10 @@ int main(int argc, char* argv[])
 	        eta = atoi(optarg);
 	        cout << " eta=" << eta;
 	        break;
+	    case 'z':
+	        max_search = atoi(optarg);
+	        cout << " max_search=" << max_search;
+	        break;
 	    case '?':  // unknown option...
 	        cerr << "Unknown option: '" << char(optopt) << "'!" << endl;
 	        break;
@@ -89,10 +94,10 @@ int main(int argc, char* argv[])
 
 	if(originalCode){
 	    vector<int> init_solution;
-	    s.local_search_with_decimation(init_solution,argv[1], randomWithEveryRun, max_time_to_run, verbose_level, verification_to_be_done); //ORIGINAL
+	    s.local_search_with_decimation(init_solution,argv[optind], randomWithEveryRun, max_time_to_run, verbose_level, verification_to_be_done); //ORIGINAL
 	}else{
 	    s.local_search_with_decimation_using_steps(randomWithEveryRun, max_time_to_run,
-	            t, sp, hinc, eta, verbose_level, verification_to_be_done);
+	            t, sp, hinc, eta, max_search, verbose_level, verification_to_be_done);
 	}
 	s.print_best_solution(print_final_var_assignment);
 	s.free_memory();
