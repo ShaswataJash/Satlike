@@ -821,12 +821,12 @@ void Satlike::print_best_solution(bool print_var_assign)
     cout << flush;
 }
 
-void Satlike::init_decimation(bool randomOnEveryRun, bool debug)
+void Satlike::init_decimation(int seed, bool debug)
 {
-    if(randomOnEveryRun){
+    if(seed < 0){
         srand((unsigned int)time(NULL));//set to get random numbers on every run
     }else{
-        srand(0);
+        srand(seed);//If seed is set to 1, the generator is reinitialized to its initial value and produces the same values as before any call to rand or srand.
     }
 
     settings(debug);
@@ -899,12 +899,12 @@ long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, in
     return (result);
 }
 
-void Satlike::local_search_with_decimation_using_steps(bool randomOnEveryRun, int maxTimeToRunInSec,
+void Satlike::local_search_with_decimation_using_steps(int seed, int maxTimeToRunInSec,
         int t, float sp,  int hinc, int eta, int max_search,
         int verbose_level, bool verification_to_be_done)
 {
     long long iteration_count = 0;
-    init_decimation(randomOnEveryRun, verbose_level > 0);
+    init_decimation(seed, verbose_level > 0);
     long long last_soft_unsat_weight = get_total_soft_weight()+1;
     for(int tries=1;tries<max_tries;++tries)
     {
@@ -946,13 +946,13 @@ void Satlike::local_search_with_decimation_using_steps(bool randomOnEveryRun, in
     }
 }
 
-void Satlike::local_search_with_decimation(vector<int>& i_solution, const char* inputfile, bool randomWithEveryRun, int max_time_to_run,
+void Satlike::local_search_with_decimation(vector<int>& i_solution, const char* inputfile, int seed, int max_time_to_run,
         int verbose, bool verification_to_be_done)
 {
-    if(randomWithEveryRun){
+    if(seed < 0){
         srand((unsigned int)time(NULL));//set to get random numbers on every run
     }else{
-        srand(0);
+        srand(seed);//If seed is set to 1, the generator is reinitialized to its initial value and produces the same values as before any call to rand or srand.
     }
     settings(verbose > 0);
 

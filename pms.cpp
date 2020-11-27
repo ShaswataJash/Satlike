@@ -21,7 +21,7 @@ int main(int argc, char* argv[])
 	int verbose_level = 0;
 	int max_time_to_run = 300;
 	bool originalCode = false;
-	bool randomWithEveryRun=false;
+	int seed=1;
 	int t = -1;
 	float sp = -1.0;
 	int hinc = -1;
@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
 	int opt;
 	// Retrieve the options:
 	cout << "SELECTED-OPTIONS: ";
-	while ( (opt = getopt(argc, argv, "v:pcm:ort:s:h:e:z:")) != -1 ) {  // for each option...
+	while ( (opt = getopt(argc, argv, "v:pcm:or:t:s:h:e:z:")) != -1 ) {  // for each option...
 	    switch ( opt ) {
 	    case 'v':
 	        verbose_level = atoi(optarg);
@@ -58,8 +58,8 @@ int main(int argc, char* argv[])
 	        cout << " original-code";
 	        break;
 	    case 'r':
-	        randomWithEveryRun = true;
-	        cout << " random-every-run";
+	        seed = atoi(optarg);
+	        cout << " seed=" << seed;
 	        break;
 	    case 't':
 	        t = atoi(optarg);
@@ -94,9 +94,9 @@ int main(int argc, char* argv[])
 
 	if(originalCode){
 	    vector<int> init_solution;
-	    s.local_search_with_decimation(init_solution,argv[optind], randomWithEveryRun, max_time_to_run, verbose_level, verification_to_be_done); //ORIGINAL
+	    s.local_search_with_decimation(init_solution,argv[optind], seed, max_time_to_run, verbose_level, verification_to_be_done); //ORIGINAL
 	}else{
-	    s.local_search_with_decimation_using_steps(randomWithEveryRun, max_time_to_run,
+	    s.local_search_with_decimation_using_steps(seed, max_time_to_run,
 	            t, sp, hinc, eta, max_search, verbose_level, verification_to_be_done);
 	}
 	s.print_best_solution(print_final_var_assignment);
