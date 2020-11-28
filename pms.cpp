@@ -3,12 +3,13 @@
 #include <signal.h>
 #include <unistd.h>
 
-static Satlike s;
+static Satlike* s = NULL;
 
 void interrupt(int sig)
 {
-	s.print_best_solution();
-	s.free_memory();
+	s->print_best_solution();
+	s->free_memory();
+	delete s;
 	exit(10);
 }
 
@@ -90,17 +91,19 @@ int main(int argc, char* argv[])
 	cout<<endl<<flush;
 
 	assert(optind == (argc-1));
-	s.build_instance(argv[optind]);
+	s = new Satlike(seed);
+	s->build_instance(argv[optind]);
 
 	if(originalCode){
 	    vector<int> init_solution;
-	    s.local_search_with_decimation(init_solution,argv[optind], seed, max_time_to_run, verbose_level, verification_to_be_done); //ORIGINAL
+	    s->local_search_with_decimation(init_solution,argv[optind], max_time_to_run, verbose_level, verification_to_be_done); //ORIGINAL
 	}else{
-	    s.local_search_with_decimation_using_steps(seed, max_time_to_run,
+	    s->local_search_with_decimation_using_steps(max_time_to_run,
 	            t, sp, hinc, eta, max_search, verbose_level, verification_to_be_done);
 	}
-	s.print_best_solution(print_final_var_assignment);
-	s.free_memory();
+	s->print_best_solution(print_final_var_assignment);
+	s->free_memory();
+	delete s;
 	
     return (0);
 }

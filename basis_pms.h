@@ -14,6 +14,7 @@
 #include <sys/times.h> //these two h files are for timing in linux
 #include <unistd.h>
 #include <cassert>
+#include <random>
 
 using namespace std;
 
@@ -28,7 +29,7 @@ using namespace Minisat;
 #define mypop(stack) stack[--stack ## _fill_pointer]
 #define mypush(item, stack) stack[stack ## _fill_pointer++] = item
 
-const float       MY_RAND_MAX_FLOAT = 10000000.0;
+//const float       MY_RAND_MAX_FLOAT = 10000000.0; //Shaswata - not used anywhere
 const int   	  MY_RAND_MAX_INT =   10000000;
 const float 	  BASIC_SCALE = 0.0000001; //1.0f/MY_RAND_MAX_FLOAT;
 
@@ -163,6 +164,10 @@ class Satlike
 	Decimation* deci; //Shaswata
 	vector<int> init_solution; //Shaswata
 
+	//Shaswata - not to depend upon any global state within standard lib (becomes problematic from python)
+	std::mt19937* generator;
+	std::uniform_int_distribution<unsigned int>* distribution;
+
 	//function used in algorithm
 	void build_neighbor_relation();
 	void allocate_memory();
@@ -187,6 +192,12 @@ class Satlike
 	    return (double)(stop.tms_utime-start_time.tms_utime+stop.tms_stime-start_time.tms_stime)/sysconf(_SC_CLK_TCK);
 	}
 
+	unsigned int my_get_rand(){
+	    unsigned int r = (*distribution)(*generator);
+	    return (r);
+	}
+
+
 	//=================== Shaswata ================
 	/*
 	int* finalFormattedResult ;
@@ -196,19 +207,19 @@ class Satlike
 	//=============================================
 
 	public:
-	Satlike();//interface for python
+	Satlike(unsigned int seed=1);//interface for python
 	void build_instance(const char *filename); //interface for python
 	void local_search(vector<int>& init_solution);
-	void local_search_with_decimation(vector<int>& init_solution, const char* inputfile, int seed=1, int max_time_to_run=300,
+	void local_search_with_decimation(vector<int>& init_solution, const char* inputfile, int max_time_to_run=300,
 	        int verbose = 0, bool verification_to_be_done = false);
 
-	void init_decimation(int seed=1, bool todebug=false);//Shaswata - interface for python
+	void init_decimation(bool todebug=false);//Shaswata - interface for python
 	void init_with_decimation_stepwise();//Shaswata	- interface for python
 	long long local_search_stepwise(int t, float sp,  int hinc, int eta, int max_search,
 	        unsigned int current_step, int verbose=0);//Shaswata - interface for python
 
 	//Following function is to compare behavior of our stepwise modification with local_search_with_decimation
-	void local_search_with_decimation_using_steps(int seed=1, int maxTimeToRunInSec=300,
+	void local_search_with_decimation_using_steps(int maxTimeToRunInSec=300,
 	        int t=-1, float sp=-1,  int hinc=-1, int eta=-1, int max_search = -1,
 	        int verbose_level=0, bool verification_to_be_done = false);//Shaswata
 

@@ -7,8 +7,15 @@ using namespace std;
 
 class Decimation
 {
-    public:
-    Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight);
+ private://Shaswata
+    std::mt19937& generator;
+    std::uniform_int_distribution<unsigned int>& distribution;
+    unsigned int my_get_rand(){
+        return (distribution(generator));
+    }
+ public:
+    Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight,
+            std::mt19937& gr, std::uniform_int_distribution<unsigned int>& dr);
     ~Decimation(){free_memory();}//Shaswata
 
     void make_space(int max_c, int max_v);
@@ -62,7 +69,8 @@ class Decimation
     int* clause_lit_count;
 };
 
-Decimation::Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight)
+Decimation::Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight,
+        std::mt19937& gr, std::uniform_int_distribution<unsigned int>& dr):generator(gr),distribution(dr)
 {
     var_lit=ls_var_lit;
     var_lit_count=ls_var_lit_count;
@@ -304,7 +312,7 @@ void Decimation::assign(int v, int sense)
 
 bool Decimation::choose_sense(int v)
 {
-    return rand()%2;
+    return my_get_rand()%2;
 }
 
 void Decimation::hunit_propagation()
@@ -348,7 +356,7 @@ void Decimation::sunit_propagation()
     {
     	for(int i=0;i<15;++i)
    		{
-   			rd=rand()%count;
+   			rd=my_get_rand()%count;
    			
     		v=sunit_clause_queue[sunit_beg_pointer+rd].var_num;
     		if(sscore[v]>best_score)
@@ -387,8 +395,8 @@ void Decimation::sunit_propagation()
 void Decimation::random_propagation()
 {
     int v,sense;
-    v=unassigned_var[rand()%unassigned_var_count];
-    sense=rand()%2;
+    v=unassigned_var[my_get_rand()%unassigned_var_count];
+    sense=my_get_rand()%2;
     assign(v,sense);
 }
 

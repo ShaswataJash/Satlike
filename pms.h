@@ -7,9 +7,11 @@
 
 #define INITIAL_MAX_FLIP 10000000 //Shaswata
 
-Satlike::Satlike()
+Satlike::Satlike(unsigned int seed)
 {
     times(&start_time);
+    generator = new std::mt19937(seed);
+    distribution = new std::uniform_int_distribution<unsigned int>(0,MY_RAND_MAX_INT);
 
     problem_weighted=1;
     partial=1; //1 if the instance has hard clauses, and 0 otherwise.
@@ -229,6 +231,14 @@ void Satlike::free_memory()
     if (finalFormattedResult != NULL){
         delete[] finalFormattedResult;
     }*/
+
+    if (generator != NULL){
+        delete generator;
+    }
+
+    if (distribution != NULL){
+        delete distribution;
+    }
 
 }
 
@@ -598,8 +608,8 @@ int Satlike::pick_var()
 
     if(goodvar_stack_fill_pointer>0 )
     {
-        if( (rand()%MY_RAND_MAX_INT)*BASIC_SCALE< rdprob )
-            return goodvar_stack[rand()%goodvar_stack_fill_pointer]; 
+        if( (my_get_rand()%MY_RAND_MAX_INT)*BASIC_SCALE< rdprob )
+            return goodvar_stack[my_get_rand()%goodvar_stack_fill_pointer];
 
         if (goodvar_stack_fill_pointer < hd_count_threshold)
         {
@@ -617,10 +627,10 @@ int Satlike::pick_var()
         }
         else
         {
-            best_var = goodvar_stack[rand()%goodvar_stack_fill_pointer];
+            best_var = goodvar_stack[my_get_rand()%goodvar_stack_fill_pointer];
             for (i=1; i<hd_count_threshold; ++i)
             {
-                v = goodvar_stack[rand()%goodvar_stack_fill_pointer];
+                v = goodvar_stack[my_get_rand()%goodvar_stack_fill_pointer];
                 if (score[v]>score[best_var]) best_var=v;
                 else if (score[v]==score[best_var])
                 {
@@ -638,14 +648,14 @@ int Satlike::pick_var()
 
     if (hardunsat_stack_fill_pointer>0) 
     {
-        sel_c = hardunsat_stack[rand()%hardunsat_stack_fill_pointer];
+        sel_c = hardunsat_stack[my_get_rand()%hardunsat_stack_fill_pointer];
     }
     else 
     {
-        sel_c= softunsat_stack[rand()%softunsat_stack_fill_pointer];
+        sel_c= softunsat_stack[my_get_rand()%softunsat_stack_fill_pointer];
     }
-    if( (rand()%MY_RAND_MAX_INT)*BASIC_SCALE< rwprob )  
-        return clause_lit[sel_c][rand()%clause_lit_count[sel_c]].var_num;
+    if( (my_get_rand()%MY_RAND_MAX_INT)*BASIC_SCALE< rwprob )
+        return clause_lit[sel_c][my_get_rand()%clause_lit_count[sel_c]].var_num;
 
     best_var = clause_lit[sel_c][0].var_num;
     p=clause_lit[sel_c];
@@ -821,16 +831,11 @@ void Satlike::print_best_solution(bool print_var_assign)
     cout << flush;
 }
 
-void Satlike::init_decimation(int seed, bool debug)
+void Satlike::init_decimation(bool debug)
 {
-    if(seed < 0){
-        srand((unsigned int)time(NULL));//set to get random numbers on every run
-    }else{
-        srand(seed);//If seed is set to 1, the generator is reinitialized to its initial value and produces the same values as before any call to rand or srand.
-    }
-
     settings(debug);
-    deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight);
+    deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight,
+            *(generator), *(distribution));
     deci->make_space(num_clauses,num_vars);
 }
 
@@ -899,12 +904,12 @@ long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, in
     return (result);
 }
 
-void Satlike::local_search_with_decimation_using_steps(int seed, int maxTimeToRunInSec,
+void Satlike::local_search_with_decimation_using_steps(int maxTimeToRunInSec,
         int t, float sp,  int hinc, int eta, int max_search,
         int verbose_level, bool verification_to_be_done)
 {
     long long iteration_count = 0;
-    init_decimation(seed, verbose_level > 0);
+    init_decimation(verbose_level > 0);
     long long last_soft_unsat_weight = get_total_soft_weight()+1;
     for(int tries=1;tries<max_tries;++tries)
     {
@@ -946,18 +951,13 @@ void Satlike::local_search_with_decimation_using_steps(int seed, int maxTimeToRu
     }
 }
 
-void Satlike::local_search_with_decimation(vector<int>& i_solution, const char* inputfile, int seed, int max_time_to_run,
+void Satlike::local_search_with_decimation(vector<int>& i_solution, const char* inputfile, int max_time_to_run,
         int verbose, bool verification_to_be_done)
 {
-    if(seed < 0){
-        srand((unsigned int)time(NULL));//set to get random numbers on every run
-    }else{
-        srand(seed);//If seed is set to 1, the generator is reinitialized to its initial value and produces the same values as before any call to rand or srand.
-    }
     settings(verbose > 0);
 
-    Decimation deci(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight);
-    deci.make_space(num_clauses,num_vars);
+    Decimation l_deci(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight, *(generator), *(distribution));
+    l_deci.make_space(num_clauses,num_vars);
     long long iteration_count = 0;
     int num_of_unsuccessful_consecutive_try = 0;//Shaswata - experimental
     for(int tries=1;tries<max_tries;++tries)
@@ -976,14 +976,14 @@ void Satlike::local_search_with_decimation(vector<int>& i_solution, const char* 
                 }
             }else*/{
                 if(verbose > 1) cout<<"c decimation process re-inited feasible_flag="<<feasible_flag << endl;
-                deci.init(local_opt_soln,best_soln,unit_clause,unit_clause_count,clause_lit_count);
+                l_deci.init(local_opt_soln,best_soln,unit_clause,unit_clause_count,clause_lit_count);
 
-                deci.unit_prosess();
+                l_deci.unit_prosess();
 
                 i_solution.resize(num_vars+1);
                 for(int i=1;i<=num_vars;++i)
                 {
-                    i_solution[i]=deci.fix[i];
+                    i_solution[i]=l_deci.fix[i];
                 }
             }
         }
@@ -1221,7 +1221,7 @@ void Satlike::smooth_weights()
 
 void Satlike::update_clause_weights()
 {	
-    if( ((rand()%MY_RAND_MAX_INT)*BASIC_SCALE)<smooth_probability
+    if( ((my_get_rand()%MY_RAND_MAX_INT)*BASIC_SCALE)<smooth_probability
             && large_weight_clauses_count>large_clause_count_threshold  )
     {
         smooth_weights();
