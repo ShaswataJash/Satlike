@@ -859,14 +859,14 @@ long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, in
         unsigned int current_step, bool adaptive_search_extent, int verbose)
 {
     update_hyper_param(t, sp, hinc, eta, max_search);
-    long long result = -1;
+    long long result = (hard_unsat_nb > 0) ? -hard_unsat_nb : opt_unsat_weight;
     if (hard_unsat_nb==0 && (soft_unsat_weight<opt_unsat_weight || best_soln_feasible==0) )
     {
         if(best_soln_feasible==0)
         {
             best_soln_feasible=1;
             opt_unsat_weight = soft_unsat_weight;
-            result = opt_unsat_weight;
+            result = opt_unsat_weight;//Shaswata, we need to update result as it is holding older opt_unsat_weight
             for(int v=1; v<=num_vars; ++v) best_soln[v] = cur_soln[v];
             feasible_flag=1;
             if(opt_unsat_weight==0){
@@ -878,7 +878,7 @@ long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, in
         {
             best_soln_feasible=1;
             opt_unsat_weight = soft_unsat_weight;
-            result = opt_unsat_weight;
+            result = opt_unsat_weight;//Shaswata, we need to update result as it is holding older opt_unsat_weight
             for(int v=1; v<=num_vars; ++v) best_soln[v] = cur_soln[v];
 
             if(opt_unsat_weight==0){
