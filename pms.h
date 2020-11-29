@@ -5,13 +5,12 @@
 #include "deci.h"
 #include <sstream>
 
-#define INITIAL_MAX_FLIP 10000000 //Shaswata
-
 Satlike::Satlike(unsigned int seed)
 {
-    times(&start_time);
-    generator = new std::mt19937(seed);
-    distribution = new std::uniform_int_distribution<unsigned int>(0,MY_RAND_MAX_INT);
+    times(&start_time);//Shaswata
+    generator = new std::mt19937(seed);//Shaswata
+    distribution = new std::uniform_int_distribution<unsigned int>(0,MY_RAND_MAX_INT);//Shaswata
+    INITIAL_MAX_FLIP = 10000000;
 
     problem_weighted=1;
     partial=1; //1 if the instance has hard clauses, and 0 otherwise.
@@ -856,7 +855,8 @@ void Satlike::init_with_decimation_stepwise()
     init(init_solution);
 }
 
-long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, int max_search, unsigned int current_step, int verbose)
+long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, int max_search,
+        unsigned int current_step, bool adaptive_search_extent, int verbose)
 {
     update_hyper_param(t, sp, hinc, eta, max_search);
     long long result = -1;
@@ -893,7 +893,9 @@ long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, in
         {
             local_soln_feasible=1;
             local_opt_unsat_weight=soft_unsat_weight;
-            max_flips=current_step+max_non_improve_flip;
+            if(adaptive_search_extent){
+                max_flips=current_step+max_non_improve_flip;
+            }
             if(verbose > 1) cout << "c changing max_flips=" << max_flips << " soft_unsat_weight=" << soft_unsat_weight << endl;
         }
     }
@@ -906,7 +908,7 @@ long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, in
 
 void Satlike::local_search_with_decimation_using_steps(int maxTimeToRunInSec,
         int t, float sp,  int hinc, int eta, int max_search,
-        int verbose_level, bool verification_to_be_done)
+        bool adaptive_search_extent, int verbose_level, bool verification_to_be_done)
 {
     long long iteration_count = 0;
     init_decimation(verbose_level > 0);
@@ -925,6 +927,7 @@ void Satlike::local_search_with_decimation_using_steps(int maxTimeToRunInSec,
                     (eta == -1) ? softclause_weight_threshold: eta,
                     (max_search == -1)? max_non_improve_flip: max_search,
                     current_step,
+                    adaptive_search_extent,
                     verbose_level);
 
             if ((result >= 0) && (result < last_soft_unsat_weight)) {
@@ -951,7 +954,7 @@ void Satlike::local_search_with_decimation_using_steps(int maxTimeToRunInSec,
     }
 }
 
-void Satlike::local_search_with_decimation(vector<int>& i_solution, const char* inputfile, int max_time_to_run,
+void Satlike::local_search_with_decimation(vector<int>& i_solution, const char* inputfile, bool adaptive_search_extent, int max_time_to_run,
         int verbose, bool verification_to_be_done)
 {
     settings(verbose > 0);
@@ -968,23 +971,15 @@ void Satlike::local_search_with_decimation(vector<int>& i_solution, const char* 
         //when first valid solution found. Then it will be transitioned to 2
         if(feasible_flag!=1)
         {
-            /*if(num_of_unsuccessful_consecutive_try >= 2) {//Shaswata - experimental
-                get_initial_search_space_using_solver(inputfile, verbose);
-                i_solution.resize(num_vars+1);
-                for(int i=1;i<=num_vars;++i){
-                    i_solution[i]= (finalFormattedResult[i] > 0) ? 1 : 0;
-                }
-            }else*/{
-                if(verbose > 1) cout<<"c decimation process re-inited feasible_flag="<<feasible_flag << endl;
-                l_deci.init(local_opt_soln,best_soln,unit_clause,unit_clause_count,clause_lit_count);
+            if(verbose > 1) cout<<"c decimation process re-inited feasible_flag="<<feasible_flag << endl;
+            l_deci.init(local_opt_soln,best_soln,unit_clause,unit_clause_count,clause_lit_count);
 
-                l_deci.unit_prosess();
+            l_deci.unit_prosess();
 
-                i_solution.resize(num_vars+1);
-                for(int i=1;i<=num_vars;++i)
-                {
-                    i_solution[i]=l_deci.fix[i];
-                }
+            i_solution.resize(num_vars+1);
+            for(int i=1;i<=num_vars;++i)
+            {
+                i_solution[i]=l_deci.fix[i];
             }
         }
 
@@ -1031,7 +1026,9 @@ void Satlike::local_search_with_decimation(vector<int>& i_solution, const char* 
                     //may not be better than opt_unsat_weight
                     local_soln_feasible=1;
                     local_opt_unsat_weight=soft_unsat_weight;
-                    max_flips=step+max_non_improve_flip; //Shaswata-experimental
+                    if(adaptive_search_extent){
+                        max_flips=step+max_non_improve_flip;
+                    }
                     if(verbose > 1) cout << "c changing max_flips=" << max_flips << " soft_unsat_weight=" << soft_unsat_weight << endl;
                 }
             }

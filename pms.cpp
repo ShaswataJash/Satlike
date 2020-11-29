@@ -30,14 +30,20 @@ int main(int argc, char* argv[])
 	int max_search=-1;
 	bool verification_to_be_done = false;
 	bool print_final_var_assignment = false;
+	bool adaptive_search_extent = false;
+	int initial_search = 0;
 
 	// Shut GetOpt error messages down (return '?'):
 	opterr = 0;
 	int opt;
 	// Retrieve the options:
 	cout << "SELECTED-OPTIONS: ";
-	while ( (opt = getopt(argc, argv, "v:pcm:or:t:s:h:e:z:")) != -1 ) {  // for each option...
+	while ( (opt = getopt(argc, argv, "av:pcm:or:t:s:h:e:z:i:")) != -1 ) {  // for each option...
 	    switch ( opt ) {
+	    case 'a':
+	        adaptive_search_extent = true;
+	        cout << " adaptive_search_extent";
+	        break;
 	    case 'v':
 	        verbose_level = atoi(optarg);
             cout << " verbose_level=" << verbose_level;
@@ -82,6 +88,10 @@ int main(int argc, char* argv[])
 	        max_search = atoi(optarg);
 	        cout << " max_search=" << max_search;
 	        break;
+	    case 'i':
+	        initial_search = atoi(optarg);
+	        cout << " initial_search=" << initial_search;
+	        break;
 	    case '?':  // unknown option...
 	        cerr << "Unknown option: '" << char(optopt) << "'!" << endl;
 	        break;
@@ -92,14 +102,18 @@ int main(int argc, char* argv[])
 
 	assert(optind == (argc-1));
 	s = new Satlike(seed);
+	if(initial_search > 0){
+	    s->set_initial_max_flip(initial_search);
+	}
 	s->build_instance(argv[optind]);
 
 	if(originalCode){
 	    vector<int> init_solution;
-	    s->local_search_with_decimation(init_solution,argv[optind], max_time_to_run, verbose_level, verification_to_be_done); //ORIGINAL
+	    s->local_search_with_decimation(init_solution,argv[optind], adaptive_search_extent,
+	            max_time_to_run, verbose_level, verification_to_be_done); //ORIGINAL
 	}else{
 	    s->local_search_with_decimation_using_steps(max_time_to_run,
-	            t, sp, hinc, eta, max_search, verbose_level, verification_to_be_done);
+	            t, sp, hinc, eta, max_search, adaptive_search_extent, verbose_level, verification_to_be_done);
 	}
 	s->print_best_solution(print_final_var_assignment);
 	s->free_memory();
