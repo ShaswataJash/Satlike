@@ -5,11 +5,10 @@
 #include "deci.h"
 #include <sstream>
 
-Satlike::Satlike(unsigned int seed)
+Satlike::Satlike()
 {
     times(&start_time);//Shaswata
-    generator = new std::mt19937(seed);//Shaswata
-    distribution = new std::uniform_int_distribution<unsigned int>(0,MY_RAND_MAX_INT);//Shaswata
+
     INITIAL_MAX_FLIP = 10000000;
 
     problem_weighted=1;
@@ -31,6 +30,8 @@ Satlike::Satlike(unsigned int seed)
     //finalFormattedResult = NULL;
     //dimParser = NULL;
     deci = NULL;
+    generator = NULL;
+    distribution = NULL;
     top_clause_weight = 0;
     total_soft_weight = 0;
     soft_unsat_weight = 0;
@@ -830,9 +831,19 @@ void Satlike::print_best_solution(bool print_var_assign)
     cout << flush;
 }
 
-void Satlike::init_decimation(bool debug)
+void Satlike::init_decimation(unsigned int seed, bool debug)
 {
     settings(debug);
+    if(generator != NULL){
+        delete generator;
+        generator = NULL;
+    }
+    if(distribution != NULL){
+        delete distribution;
+        distribution = NULL;
+    }
+    generator = new std::mt19937(seed);//Shaswata
+    distribution = new std::uniform_int_distribution<unsigned int>(0,MY_RAND_MAX_INT);//Shaswata
     deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight,
             *(generator), *(distribution));
     deci->make_space(num_clauses,num_vars);
@@ -906,12 +917,12 @@ long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, in
     return (result);
 }
 
-void Satlike::local_search_with_decimation_using_steps(int maxTimeToRunInSec,
+void Satlike::local_search_with_decimation_using_steps(unsigned int seed, int maxTimeToRunInSec,
         int t, float sp,  int hinc, int eta, int max_search,
         bool adaptive_search_extent, int verbose_level, bool verification_to_be_done)
 {
     long long iteration_count = 0;
-    init_decimation(verbose_level > 0);
+    init_decimation(seed, verbose_level > 0);
     long long last_soft_unsat_weight = get_total_soft_weight()+1;
     for(int tries=1;tries<max_tries;++tries)
     {
@@ -954,12 +965,17 @@ void Satlike::local_search_with_decimation_using_steps(int maxTimeToRunInSec,
     }
 }
 
-void Satlike::local_search_with_decimation(vector<int>& i_solution, const char* inputfile, bool adaptive_search_extent, int max_time_to_run,
+void Satlike::local_search_with_decimation(unsigned int seed, vector<int>& i_solution, const char* inputfile, bool adaptive_search_extent, int max_time_to_run,
         int verbose, bool verification_to_be_done)
 {
     settings(verbose > 0);
 
-    Decimation l_deci(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight, *(generator), *(distribution));
+    assert(generator == NULL);
+    assert(distribution == NULL);
+    generator = new std::mt19937(seed);//Shaswata
+    distribution = new std::uniform_int_distribution<unsigned int>(0,MY_RAND_MAX_INT);//Shaswata
+
+    Decimation l_deci(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight, *generator, *distribution);
     l_deci.make_space(num_clauses,num_vars);
     long long iteration_count = 0;
     int num_of_unsuccessful_consecutive_try = 0;//Shaswata - experimental
