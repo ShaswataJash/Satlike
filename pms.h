@@ -833,6 +833,12 @@ void Satlike::print_best_solution(bool print_var_assign)
 
 void Satlike::init_decimation(unsigned int seed, bool debug)
 {
+    //Shaswata: moving here so that same satlike instance can be used multiple times
+    best_soln_feasible=0;
+    feasible_flag=0;
+    opt_unsat_weight=total_soft_weight+1;
+    //===================================
+
     settings(debug);
     if(generator != NULL){
         delete generator;
