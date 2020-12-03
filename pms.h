@@ -850,9 +850,13 @@ void Satlike::init_decimation(unsigned int seed, bool debug)
     }
     generator = new std::mt19937(seed);//Shaswata
     distribution = new std::uniform_int_distribution<unsigned int>(0,MY_RAND_MAX_INT);//Shaswata
-    deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight,
-            *(generator), *(distribution));
-    deci->make_space(num_clauses,num_vars);
+    if(deci == NULL){
+        deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight,
+                    *generator, *distribution);
+        deci->make_space(num_clauses,num_vars);
+    }else{
+        deci->set_random_generator(*generator, *distribution);
+    }
 }
 
 void Satlike::init_with_decimation_stepwise()
@@ -866,7 +870,7 @@ void Satlike::init_with_decimation_stepwise()
         init_solution.resize(num_vars+1);
         for(int i=1;i<=num_vars;++i)
         {
-            init_solution[i]=deci->fix[i];
+            init_solution[i]=deci->get_fix(i);
         }
     }
     init(init_solution);
@@ -1001,7 +1005,7 @@ void Satlike::local_search_with_decimation(unsigned int seed, vector<int>& i_sol
             i_solution.resize(num_vars+1);
             for(int i=1;i<=num_vars;++i)
             {
-                i_solution[i]=l_deci.fix[i];
+                i_solution[i]=l_deci.get_fix(i);
             }
         }
 

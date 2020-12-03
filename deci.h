@@ -13,28 +13,12 @@ class Decimation
     unsigned int my_get_rand(){
         return (distribution(generator));
     }
- public:
-    Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight,
-            std::mt19937& gr, std::uniform_int_distribution<unsigned int>& dr);
-    ~Decimation(){free_memory();}//Shaswata
-
-    void make_space(int max_c, int max_v);
-    void free_memory();
-    void init(int* ls_local_opt, int* ls_global_opt, lit* ls_unit_clause, int ls_unit_clause_count, int* ls_clause_lit_count);
-    void push_unit_clause_to_queue(lit tem_l);
-    void assign(int v, int sense);
-    void remove_unassigned_var(int v);
-    void hunit_propagation();
-    void sunit_propagation();
-    void random_propagation();
-    void unit_prosess();
-    bool choose_sense(int v);
 
     int* fix;
-    
+
     int num_vars;
     int num_clauses;
-	
+
     long long* h_true_score;
     long long* h_false_score;
     long long* hscore;
@@ -67,6 +51,27 @@ class Decimation
 
     int* clause_delete;
     int* clause_lit_count;
+
+ public:
+    Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight,
+            std::mt19937& gr, std::uniform_int_distribution<unsigned int>& dr);
+    ~Decimation(){free_memory();}//Shaswata
+    int get_fix(int i){return (fix[i]);}//Shaswata - as member variables have been moved under private
+    void set_random_generator(std::mt19937& gr, std::uniform_int_distribution<unsigned int>& dr){ //Shaswata
+        generator = gr;
+        distribution = dr;
+    }
+    void make_space(int max_c, int max_v);
+    void free_memory();
+    void init(int* ls_local_opt, int* ls_global_opt, lit* ls_unit_clause, int ls_unit_clause_count, int* ls_clause_lit_count);
+    void push_unit_clause_to_queue(lit tem_l);
+    void assign(int v, int sense);
+    void remove_unassigned_var(int v);
+    void hunit_propagation();
+    void sunit_propagation();
+    void random_propagation();
+    void unit_prosess();
+    bool choose_sense(int v);
 };
 
 Decimation::Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight,
