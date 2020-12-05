@@ -467,6 +467,7 @@ void Satlike::build_instance(const char *filename)
 
     build_neighbor_relation();
 
+    //Shaswata: following three variables have to initialized for every run of algo
     best_soln_feasible=0;
     feasible_flag=0;
     opt_unsat_weight=total_soft_weight+1;
@@ -831,9 +832,9 @@ void Satlike::print_best_solution(bool print_var_assign)
     cout << flush;
 }
 
-void Satlike::init_decimation(unsigned int seed, bool debug)
+void Satlike::algo_init(unsigned int seed, bool debug)
 {
-    //Shaswata: moving here so that same satlike instance can be used multiple times
+    //Shaswata: moving from build_instance() to here so that same satlike instance can be used multiple times
     best_soln_feasible=0;
     feasible_flag=0;
     opt_unsat_weight=total_soft_weight+1;
@@ -921,6 +922,9 @@ long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, in
         }
     }
 
+    prev_hard_unsat_nb = hard_unsat_nb;
+    prev_soft_unsat_weight = soft_unsat_weight;
+
     int flipvar = pick_var();
     flip(flipvar);
     time_stamp[flipvar] = current_step;
@@ -932,7 +936,7 @@ void Satlike::local_search_with_decimation_using_steps(unsigned int seed, int ma
         bool adaptive_search_extent, int verbose_level, bool verification_to_be_done)
 {
     long long iteration_count = 0;
-    init_decimation(seed, verbose_level > 0);
+    algo_init(seed, verbose_level > 0);
     long long last_soft_unsat_weight = get_total_soft_weight()+1;
     for(int tries=1;tries<max_tries;++tries)
     {

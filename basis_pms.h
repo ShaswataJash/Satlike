@@ -198,6 +198,9 @@ class Satlike
 	    return (r);
 	}
 
+	int prev_hard_unsat_nb;
+	long long prev_soft_unsat_weight;
+
 
 	//=================== Shaswata ================
 	/*
@@ -215,7 +218,7 @@ class Satlike
 	        bool adaptive_search_extent=true, int max_time_to_run=300,
 	        int verbose = 0, bool verification_to_be_done = false);
 
-	void init_decimation(unsigned int seed, bool todebug);//Shaswata - interface for python
+	void algo_init(unsigned int seed, bool todebug);//Shaswata - interface for python
 	void init_with_decimation_stepwise();//Shaswata	- interface for python
 	long long local_search_stepwise(int t, float sp,  int hinc, int eta, int max_search,
 	        unsigned int current_step, bool adaptive_search_extent=true, int verbose=0);//Shaswata - interface for python
@@ -249,6 +252,12 @@ class Satlike
 	long long get_total_soft_weight() { return (total_soft_weight);}
 	long long get_soft_unsat_weight() { return (soft_unsat_weight);}
 	long long get_opt_unsat_weight() { return (opt_unsat_weight);}
+
+	int get_hard_unsat_nb_before_flip() {return (prev_hard_unsat_nb);}
+	long long get_soft_unsat_weight_before_flip() {return (prev_soft_unsat_weight);}
+
+	long long get_var_score(int v){return (score[v]);}
+	long long get_clause_weight(int c){return (clause_weight[c]);}
 
 	int get_best_sol(int var_id){ return (best_soln[var_id]);}
 
