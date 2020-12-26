@@ -860,9 +860,9 @@ void Satlike::algo_init(unsigned int seed, bool debug)
     }
 }
 
-void Satlike::init_with_decimation_stepwise()
+void Satlike::init_with_decimation_stepwise(bool through_decimation)
 {
-    if(feasible_flag!=1)
+    if(through_decimation && (feasible_flag!=1))
     {
         deci->init(local_opt_soln,best_soln,unit_clause,unit_clause_count,clause_lit_count);
 

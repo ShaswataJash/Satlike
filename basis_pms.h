@@ -219,7 +219,7 @@ class Satlike
 	        int verbose = 0, bool verification_to_be_done = false);
 
 	void algo_init(unsigned int seed, bool todebug);//Shaswata - interface for python
-	void init_with_decimation_stepwise();//Shaswata	- interface for python
+	void init_with_decimation_stepwise(bool through_decimation=true);//Shaswata	- interface for python
 	long long local_search_stepwise(int t, float sp,  int hinc, int eta, int max_search,
 	        unsigned int current_step, bool adaptive_search_extent=true, int verbose=0);//Shaswata - interface for python
 
@@ -260,6 +260,7 @@ class Satlike
 	long long get_clause_weight(int c){return (clause_weight[c]);}
 
 	int get_best_sol(int var_id){ return (best_soln[var_id]);}
+	void set_init_sol(int var_id, int assignment){init_solution[var_id] = assignment;}
 
 };
 
