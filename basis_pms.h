@@ -200,6 +200,7 @@ class Satlike
 
 	int prev_hard_unsat_nb;
 	long long prev_soft_unsat_weight;
+	int fliped_var;
 
 
 	//=================== Shaswata ================
@@ -255,11 +256,13 @@ class Satlike
 
 	int get_hard_unsat_nb_before_flip() {return (prev_hard_unsat_nb);}
 	long long get_soft_unsat_weight_before_flip() {return (prev_soft_unsat_weight);}
+	int get_flipped_var(){return (fliped_var);}
 
 	long long get_var_score(int v){return (score[v]);}
 	long long get_clause_weight(int c){return (clause_weight[c]);}
 
 	int get_best_sol(int var_id){ return (best_soln[var_id]);}
+	int get_current_sol(int var_id){ return (cur_soln[var_id]);}
 	void set_init_sol(int var_id, int assignment){init_solution[var_id] = assignment;}
 
 };

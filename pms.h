@@ -926,6 +926,7 @@ long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, in
     prev_soft_unsat_weight = soft_unsat_weight;
 
     int flipvar = pick_var();
+    fliped_var = flipvar;
     flip(flipvar);
     time_stamp[flipvar] = current_step;
     return (result);
