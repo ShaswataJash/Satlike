@@ -262,7 +262,7 @@ class Satlike
 	long long get_clause_weight(int c){return (clause_weight[c]);}
 
 	int get_best_sol(int var_id){ return (best_soln[var_id]);}
-	int get_current_sol(int var_id){ return (cur_soln[var_id]);}
+	int get_init_sol(int var_id){ return (init_solution[var_id]);}
 	void set_init_sol(int var_id, int assignment){init_solution[var_id] = assignment;}
 
 };
