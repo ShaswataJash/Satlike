@@ -4,6 +4,7 @@
 #include "basis_pms.h"
 #include "deci.h"
 #include <sstream>
+#include <array>
 
 Satlike::Satlike()
 {
@@ -31,7 +32,6 @@ Satlike::Satlike()
     //dimParser = NULL;
     deci = NULL;
     generator = NULL;
-    distribution = NULL;
     top_clause_weight = 0;
     total_soft_weight = 0;
     soft_unsat_weight = 0;
@@ -234,10 +234,6 @@ void Satlike::free_memory()
 
     if (generator != NULL){
         delete generator;
-    }
-
-    if (distribution != NULL){
-        delete distribution;
     }
 
 }
@@ -845,18 +841,18 @@ void Satlike::algo_init(unsigned int seed, bool debug)
         delete generator;
         generator = NULL;
     }
-    if(distribution != NULL){
-        delete distribution;
-        distribution = NULL;
-    }
-    generator = new std::mt19937(seed);//Shaswata
-    distribution = new std::uniform_int_distribution<unsigned int>(0,MY_RAND_MAX_INT);//Shaswata
+
+    std::array<unsigned int,std::mt19937::state_size> myarray;
+    myarray.fill(seed);
+    std::seed_seq initial_state_of_mt19937 (myarray.cbegin(), myarray.cend());
+    generator = new std::mt19937(initial_state_of_mt19937);//Shaswata
+
     if(deci == NULL){
         deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight,
-                    *generator, *distribution);
+                    *generator);
         deci->make_space(num_clauses,num_vars);
     }else{
-        deci->set_random_generator(*generator, *distribution);
+        deci->set_random_generator(*generator);
     }
 }
 
@@ -986,11 +982,13 @@ void Satlike::local_search_with_decimation(unsigned int seed, vector<int>& i_sol
     settings(verbose > 0);
 
     assert(generator == NULL);
-    assert(distribution == NULL);
-    generator = new std::mt19937(seed);//Shaswata
-    distribution = new std::uniform_int_distribution<unsigned int>(0,MY_RAND_MAX_INT);//Shaswata
 
-    Decimation l_deci(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight, *generator, *distribution);
+    std::array<unsigned int,std::mt19937::state_size> myarray;
+    myarray.fill(seed);
+    std::seed_seq initial_state_of_mt19937 (myarray.cbegin(), myarray.cend());
+    generator = new std::mt19937(initial_state_of_mt19937);//Shaswata
+
+    Decimation l_deci(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight, *generator);
     l_deci.make_space(num_clauses,num_vars);
     long long iteration_count = 0;
     int num_of_unsuccessful_consecutive_try = 0;//Shaswata - experimental

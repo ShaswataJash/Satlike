@@ -9,9 +9,9 @@ class Decimation
 {
  private://Shaswata
     std::mt19937& generator;
-    std::uniform_int_distribution<unsigned int>& distribution;
+
     unsigned int my_get_rand(){
-        return (distribution(generator));
+        return (generator());
     }
 
     int* fix;
@@ -54,12 +54,11 @@ class Decimation
 
  public:
     Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight,
-            std::mt19937& gr, std::uniform_int_distribution<unsigned int>& dr);
+            std::mt19937& gr);
     ~Decimation(){free_memory();}//Shaswata
     int get_fix(int i){return (fix[i]);}//Shaswata - as member variables have been moved under private
-    void set_random_generator(std::mt19937& gr, std::uniform_int_distribution<unsigned int>& dr){ //Shaswata
+    void set_random_generator(std::mt19937& gr){ //Shaswata
         generator = gr;
-        distribution = dr;
     }
     void make_space(int max_c, int max_v);
     void free_memory();
@@ -75,7 +74,7 @@ class Decimation
 };
 
 Decimation::Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight,
-        std::mt19937& gr, std::uniform_int_distribution<unsigned int>& dr):generator(gr),distribution(dr)
+        std::mt19937& gr):generator(gr)
 {
     var_lit=ls_var_lit;
     var_lit_count=ls_var_lit_count;
@@ -317,7 +316,7 @@ void Decimation::assign(int v, int sense)
 
 bool Decimation::choose_sense(int v)
 {
-    return my_get_rand()%2;
+    return (my_get_rand()%2);
 }
 
 void Decimation::hunit_propagation()

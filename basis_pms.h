@@ -167,7 +167,6 @@ class Satlike
 
 	//Shaswata - not to depend upon any global state within standard lib (becomes problematic from python)
 	std::mt19937* generator;
-	std::uniform_int_distribution<unsigned int>* distribution;
 
 	//function used in algorithm
 	void build_neighbor_relation();
@@ -194,7 +193,7 @@ class Satlike
 	}
 
 	unsigned int my_get_rand(){
-	    unsigned int r = (*distribution)(*generator);
+	    unsigned int r = (*generator)();
 	    return (r);
 	}
 
