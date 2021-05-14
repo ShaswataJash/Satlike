@@ -224,6 +224,7 @@ void Satlike::free_memory()
     //Shaswata
     if (deci != NULL){
         delete deci;
+        deci = NULL;
     }
     /*if (dimParser != NULL){
         delete dimParser;
@@ -234,6 +235,7 @@ void Satlike::free_memory()
 
     if (generator != NULL){
         delete generator;
+        generator = NULL;
     }
 
 }
@@ -279,6 +281,10 @@ void Satlike::build_neighbor_relation()
 
 void Satlike::build_instance(const char *filename)
 {
+    if((deci != NULL) || (generator != NULL)){
+        free_memory();
+    }
+
     istringstream iss;
     char    line[1024 + 1]; //Shaswata - 1 byte additional for '\0'
     string  line2;
@@ -837,23 +843,17 @@ void Satlike::algo_init(unsigned int seed, bool debug)
     //===================================
 
     settings(debug);
-    if(generator != NULL){
-        delete generator;
-        generator = NULL;
-    }
+    assert(generator == NULL);
+    assert(deci == NULL);
 
     std::array<unsigned int,std::mt19937::state_size> myarray;
     myarray.fill(seed);
     std::seed_seq initial_state_of_mt19937 (myarray.cbegin(), myarray.cend());
     generator = new std::mt19937(initial_state_of_mt19937);//Shaswata
 
-    if(deci == NULL){
-        deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight,
-                    *generator);
-        deci->make_space(num_clauses,num_vars);
-    }else{
-        deci->set_random_generator(*generator);
-    }
+    deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight,
+                        *generator);
+    deci->make_space(num_clauses,num_vars);
 }
 
 void Satlike::init_with_decimation_stepwise(bool through_decimation)
@@ -938,7 +938,7 @@ void Satlike::local_search_with_decimation_using_steps(unsigned int seed, int ma
     for(int tries=1;tries<max_tries;++tries)
     {
         init_with_decimation_stepwise();
-        if(verbose_level > 1) cout<<"c iteration_count=" << iteration_count << " try=" << tries << " hard_unsat_nb=" << hard_unsat_nb << endl << flush;
+
         for (unsigned int current_step = 1; current_step<get_max_flips(); ++current_step)
         {
             ++iteration_count;
@@ -955,7 +955,7 @@ void Satlike::local_search_with_decimation_using_steps(unsigned int seed, int ma
             if ((result >= 0) && (result < last_soft_unsat_weight)) {
                 if(verbose_level > 0){
                     float fractSat = (float)(get_total_soft_weight() - result) / (float)get_total_soft_weight();
-                    cout << "iteration_count=" << iteration_count << " tries=" << tries << " current_step=" << current_step <<
+                    cout << "c iteration_count=" << iteration_count << " tries=" << tries << " current_step=" << current_step <<
                             " opt_unsat_weight=" << result <<
                             " fractSat =" << fractSat << " time-took=" << get_runtime()
                             << endl;
@@ -969,14 +969,16 @@ void Satlike::local_search_with_decimation_using_steps(unsigned int seed, int ma
             }
 
             if(get_runtime() > maxTimeToRunInSec){
-                if (verbose_level > 0) cout<<"c iteration_count=" << iteration_count << endl << flush;
+                if (verbose_level > 0) cout<<"c time exhausted iteration_count=" << iteration_count << endl << flush;
                 return;
             }
         }
+
+        if(verbose_level > 0) cout<<"c Episode completed iteration_count=" << iteration_count << endl << flush;
     }
 }
 
-void Satlike::local_search_with_decimation(unsigned int seed, vector<int>& i_solution, const char* inputfile, bool adaptive_search_extent, int max_time_to_run,
+void Satlike::local_search_with_decimation(unsigned int seed, vector<int>& i_solution, const char* inputfile, int max_time_to_run,
         int verbose, bool verification_to_be_done)
 {
     settings(verbose > 0);
@@ -1055,9 +1057,7 @@ void Satlike::local_search_with_decimation(unsigned int seed, vector<int>& i_sol
                     //may not be better than opt_unsat_weight
                     local_soln_feasible=1;
                     local_opt_unsat_weight=soft_unsat_weight;
-                    if(adaptive_search_extent){
-                        max_flips=step+max_non_improve_flip;
-                    }
+                    max_flips=step+max_non_improve_flip;
                     if(verbose > 1) cout << "c changing max_flips=" << max_flips << " soft_unsat_weight=" << soft_unsat_weight << endl;
                 }
             }
@@ -1076,11 +1076,12 @@ void Satlike::local_search_with_decimation(unsigned int seed, vector<int>& i_sol
             time_stamp[flipvar] = step;
 
             if(get_runtime() > max_time_to_run){
-                if(verbose > 0) cout<<"c iteration_count=" << iteration_count << endl << flush;
+                if(verbose > 0) cout<<"c time exhausted iteration_count=" << iteration_count << endl << flush;
                 return;
             }
         }
         num_of_unsuccessful_consecutive_try ++;
+        if(verbose > 0) cout<<"c Episode completed iteration_count=" << iteration_count << endl << flush;
     }
 }
 
