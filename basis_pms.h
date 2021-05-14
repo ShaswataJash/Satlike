@@ -44,6 +44,7 @@ struct lit
 class Satlike
 {
 	private:
+
 	/***********non-algorithmic information ****************/
 	int problem_weighted;
 	int partial; //1 if the instance has hard clauses, and 0 otherwise.
@@ -215,7 +216,7 @@ class Satlike
 	void build_instance(const char *filename); //interface for python
 	void local_search(vector<int>& init_solution);
 	void local_search_with_decimation(unsigned int seed, vector<int>& init_solution, const char* inputfile,
-	        bool adaptive_search_extent=true, int max_time_to_run=300,
+	        int max_time_to_run=300,
 	        int verbose = 0, bool verification_to_be_done = false);
 
 	void algo_init(unsigned int seed, bool todebug);//Shaswata - interface for python
