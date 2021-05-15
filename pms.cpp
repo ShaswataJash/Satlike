@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
 
 	if(originalCode){
 	    vector<int> init_solution;
-	    s.local_search_with_decimation(seed, init_solution,argv[optind], adaptive_search_extent,
+	    s.local_search_with_decimation(seed, init_solution,argv[optind],
 	            max_time_to_run, verbose_level, verification_to_be_done); //ORIGINAL
 	}else{
 	    s.local_search_with_decimation_using_steps(seed, max_time_to_run,
