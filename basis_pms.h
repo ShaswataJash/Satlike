@@ -212,7 +212,7 @@ class Satlike
 	//=============================================
 
 	public:
-	Satlike();//interface for python
+
 	void build_instance(const char *filename); //interface for python
 	void local_search(vector<int>& init_solution);
 	void local_search_with_decimation(unsigned int seed, vector<int>& init_solution, const char* inputfile,
@@ -265,6 +265,9 @@ class Satlike
 	int get_best_sol(int var_id){ return (best_soln[var_id]);}
 	int get_init_sol(int var_id){ return (init_solution[var_id]);}
 	void set_init_sol(int var_id, int assignment){init_solution[var_id] = assignment;}
+
+	Satlike();
+	~Satlike(){free_memory();}
 
 };
 

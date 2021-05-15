@@ -10,32 +10,52 @@ Satlike::Satlike()
 {
     times(&start_time);//Shaswata
 
-    INITIAL_MAX_FLIP = 10000000;
+    unit_clause = NULL;
+    var_lit = NULL;
+    var_lit_count = NULL;
+    clause_lit = NULL;
+    clause_lit_count = NULL;
+    score = NULL;
+    var_neighbor = NULL;
+    var_neighbor_count = NULL;
+    time_stamp = NULL;
+    neighbor_flag = NULL;
+    temp_neighbor = NULL;
 
-    problem_weighted=1;
-    partial=1; //1 if the instance has hard clauses, and 0 otherwise.
+    org_clause_weight = NULL;
+    clause_weight = NULL;
+    sat_count = NULL;
+    sat_var = NULL;
+    clause_selected_count = NULL;
+    best_soft_clause = NULL;
 
-    max_clause_length=0;
-    min_clause_length=100000000;
+    hardunsat_stack = NULL;
+    index_in_hardunsat_stack = NULL;
+    softunsat_stack = NULL;
+    index_in_softunsat_stack = NULL;
 
-    //size of the instance
-    num_vars=0;		//var index from 1 to num_vars
-    num_clauses=0;		//clause index from 0 to num_clauses-1
-    num_hclauses=0;
-    num_sclauses=0;
+    unsatvar_stack = NULL;
+    index_in_unsatvar_stack = NULL;
+    unsat_app_count = NULL;
 
-    print_time=240;
-    cutoff_time=300;
+    goodvar_stack = NULL;
+    already_in_goodvar_stack = NULL;
 
-    //Shaswata
-    //finalFormattedResult = NULL;
-    //dimParser = NULL;
+    cur_soln = NULL;
+    best_soln = NULL;
+    local_opt_soln = NULL;
+
+    large_weight_clauses = NULL;
+    soft_large_weight_clauses = NULL;
+    already_in_soft_large_weight_stack = NULL;
+
+    best_array = NULL;
+    temp_lit = NULL;
+
     deci = NULL;
+    //dimParser = NULL;
+    //finalFormattedResult = NULL;
     generator = NULL;
-    top_clause_weight = 0;
-    total_soft_weight = 0;
-    soft_unsat_weight = 0;
-    opt_unsat_weight = 0;
 }
 
 void Satlike::settings(bool debug)
@@ -158,68 +178,191 @@ void Satlike::free_memory()
     int malloc_var_length = num_vars+10;
     int malloc_clause_length = num_clauses+10;
 
-    delete[] unit_clause;
-
-    for(int i=0; i< malloc_var_length; ++i){
-        if (var_lit[i] != NULL){
-            delete[] var_lit[i];
-        }
+    if (unit_clause != NULL){
+        delete[] unit_clause;
+        unit_clause = NULL;
     }
-    delete[] var_lit;
-    delete [] var_lit_count;
 
-    for(int i=0; i< malloc_clause_length; ++i){
-        if (clause_lit[i] != NULL){
-            delete[] clause_lit[i];
+    if(var_lit != NULL){
+        for(int i=0; i< malloc_var_length; ++i){
+            if (var_lit[i] != NULL){
+                delete[] var_lit[i];
+            }
         }
+        delete[] var_lit;
+        var_lit = NULL;
     }
-    delete[] clause_lit;
-    delete[] clause_lit_count;
 
-    delete [] score;
+    if(var_lit_count != NULL){
+        delete [] var_lit_count;
+        var_lit_count = NULL;
+    }
 
-    for(int i=0; i< malloc_var_length; ++i){
-        if (var_neighbor[i] != NULL){
-            delete[] var_neighbor[i];
+    if(clause_lit != NULL){
+        for(int i=0; i< malloc_clause_length; ++i){
+            if (clause_lit[i] != NULL){
+                delete[] clause_lit[i];
+            }
         }
+        delete[] clause_lit;
+        clause_lit = NULL;
     }
-    delete [] var_neighbor;
-    delete [] var_neighbor_count;
 
-    delete [] time_stamp;
-    delete [] neighbor_flag;
-    delete [] temp_neighbor;
+    if(clause_lit_count != NULL){
+        delete[] clause_lit_count;
+        clause_lit_count = NULL;
+    }
 
-    delete [] org_clause_weight;
-    delete [] clause_weight;
-    delete [] sat_count;
-    delete [] sat_var;
-    delete [] clause_selected_count;
-    delete [] best_soft_clause;
+    if(score != NULL){
+       delete [] score;
+       score = NULL;
+    }
 
-    delete [] hardunsat_stack;
-    delete [] index_in_hardunsat_stack;
-    delete [] softunsat_stack;
-    delete [] index_in_softunsat_stack;
+    if(var_neighbor != NULL){
+        for(int i=0; i< malloc_var_length; ++i){
+            if (var_neighbor[i] != NULL){
+                delete[] var_neighbor[i];
+            }
+        }
+        delete [] var_neighbor;
+    }
 
-    delete [] unsatvar_stack;
-    delete [] index_in_unsatvar_stack;
-    delete [] unsat_app_count;
+    if(var_neighbor_count != NULL){
+        delete [] var_neighbor_count;
+        var_neighbor_count = NULL;
+    }
 
-    delete [] goodvar_stack;
-    delete [] already_in_goodvar_stack;
+    if(time_stamp != NULL){
+        delete [] time_stamp;
+        time_stamp = NULL;
+    }
+
+    if(neighbor_flag != NULL){
+        delete [] neighbor_flag;
+        neighbor_flag = NULL;
+    }
+
+    if(temp_neighbor != NULL){
+        delete [] temp_neighbor;
+        temp_neighbor = NULL;
+    }
+
+    if(org_clause_weight != NULL){
+        delete [] org_clause_weight;
+        org_clause_weight = NULL;
+    }
+
+    if(clause_weight != NULL){
+        delete [] clause_weight;
+        clause_weight = NULL;
+    }
+
+    if(sat_count != NULL){
+        delete [] sat_count;
+        sat_count = NULL;
+    }
+
+    if(sat_var != NULL){
+        delete [] sat_var;
+        sat_var = NULL;
+    }
+
+    if(clause_selected_count != NULL){
+        delete [] clause_selected_count;
+        clause_selected_count = NULL;
+    }
+
+    if(best_soft_clause != NULL){
+        delete [] best_soft_clause;
+        best_soft_clause = NULL;
+    }
+
+    if(hardunsat_stack != NULL){
+        delete [] hardunsat_stack;
+        hardunsat_stack = NULL;
+    }
+
+    if(index_in_hardunsat_stack != NULL){
+        delete [] index_in_hardunsat_stack;
+        index_in_hardunsat_stack = NULL;
+    }
+
+    if(softunsat_stack != NULL){
+        delete [] softunsat_stack;
+        softunsat_stack = NULL;
+    }
+
+    if(index_in_softunsat_stack != NULL){
+        delete [] index_in_softunsat_stack;
+        index_in_softunsat_stack = NULL;
+    }
+
+    if(unsatvar_stack != NULL){
+        delete [] unsatvar_stack;
+        unsatvar_stack = NULL;
+    }
+
+    if(index_in_unsatvar_stack != NULL){
+        delete [] index_in_unsatvar_stack;
+        index_in_unsatvar_stack = NULL;
+    }
+
+    if(unsat_app_count != NULL){
+        delete [] unsat_app_count;
+        unsat_app_count = NULL;
+    }
+
+    if(goodvar_stack != NULL){
+        delete [] goodvar_stack;
+        goodvar_stack = NULL;
+    }
+
+    if(already_in_goodvar_stack != NULL){
+        delete [] already_in_goodvar_stack;
+        already_in_goodvar_stack = NULL;
+    }
 
     //delete [] fix;
-    delete [] cur_soln;
-    delete [] best_soln;
-    delete [] local_opt_soln;
 
-    delete [] large_weight_clauses;
-    delete [] soft_large_weight_clauses;
-    delete [] already_in_soft_large_weight_stack;
+    if(cur_soln != NULL){
+        delete [] cur_soln;
+        cur_soln = NULL;
+    }
 
-    delete [] best_array;
-    delete [] temp_lit;
+    if(best_soln != NULL){
+        delete [] best_soln;
+        best_soln = NULL;
+    }
+
+    if(local_opt_soln != NULL){
+        delete [] local_opt_soln;
+        local_opt_soln = NULL;
+    }
+
+    if(large_weight_clauses != NULL){
+        delete [] large_weight_clauses;
+        large_weight_clauses = NULL;
+    }
+
+    if(soft_large_weight_clauses != NULL){
+        delete [] soft_large_weight_clauses;
+        soft_large_weight_clauses = NULL;
+    }
+
+    if(already_in_soft_large_weight_stack != NULL){
+        delete [] already_in_soft_large_weight_stack;
+        already_in_soft_large_weight_stack = NULL;
+    }
+
+    if(best_array != NULL){
+        delete [] best_array;
+        best_array = NULL;
+    }
+
+    if(temp_lit != NULL){
+        delete [] temp_lit;
+        temp_lit = NULL;
+    }
 
     //Shaswata
     if (deci != NULL){
@@ -228,9 +371,11 @@ void Satlike::free_memory()
     }
     /*if (dimParser != NULL){
         delete dimParser;
+        dimParser = NULL;
     }
     if (finalFormattedResult != NULL){
         delete[] finalFormattedResult;
+        finalFormattedResult = NULL;
     }*/
 
     if (generator != NULL){
@@ -281,9 +426,35 @@ void Satlike::build_neighbor_relation()
 
 void Satlike::build_instance(const char *filename)
 {
-    if((deci != NULL) || (generator != NULL)){
-        free_memory();
-    }
+    //Shaswata: Moved all the initialization of constructor here
+    //due to from python interface same object is being resued which doesn't go via constructor
+    INITIAL_MAX_FLIP = 10000000;
+
+    problem_weighted=1;
+    partial=1; //1 if the instance has hard clauses, and 0 otherwise.
+
+    max_clause_length=0;
+    min_clause_length=100000000;
+
+    //size of the instance
+    num_vars=0;     //var index from 1 to num_vars
+    num_clauses=0;      //clause index from 0 to num_clauses-1
+    num_hclauses=0;
+    num_sclauses=0;
+
+    print_time=240;
+    cutoff_time=300;
+
+    //finalFormattedResult = NULL;
+    //dimParser = NULL;
+    deci = NULL;
+    generator = NULL;
+    top_clause_weight = 0;
+    total_soft_weight = 0;
+    soft_unsat_weight = 0;
+    opt_unsat_weight = 0;
+
+    //======================================
 
     istringstream iss;
     char    line[1024 + 1]; //Shaswata - 1 byte additional for '\0'
