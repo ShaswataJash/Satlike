@@ -266,6 +266,8 @@ class Satlike
 	int get_init_sol(int var_id){ return (init_solution[var_id]);}
 	void set_init_sol(int var_id, int assignment){init_solution[var_id] = assignment;}
 
+	int get_feasible_flag_state() { return (feasible_flag);}
+
 	Satlike();
 	~Satlike(){free_memory();}
 
