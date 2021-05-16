@@ -647,7 +647,7 @@ void Satlike::build_instance(const char *filename)
     opt_unsat_weight=total_soft_weight+1;
 }
 
-void Satlike::init(vector<int>& i_solution)
+void Satlike::init(vector<int>& i_solution, bool override_init_sol)
 {
     int 		v,c;
     int			i,j;
@@ -694,7 +694,7 @@ void Satlike::init(vector<int>& i_solution)
         }
     }
     //init solution
-    if(feasible_flag==1)
+    if((feasible_flag==1) && !override_init_sol) //Shaswata - included override_init_sol
     {
         for (v = 1; v <= num_vars; v++)
         {
@@ -704,7 +704,7 @@ void Satlike::init(vector<int>& i_solution)
         }
         feasible_flag=2;
     }
-    else if(i_solution.size()==0)
+    else if((i_solution.size()==0) && !override_init_sol)
     {
         for (v = 1; v <= num_vars; v++) 
         {
