@@ -225,6 +225,7 @@ void Satlike::free_memory()
             }
         }
         delete [] var_neighbor;
+        var_neighbor = NULL;
     }
 
     if(var_neighbor_count != NULL){
