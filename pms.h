@@ -1042,7 +1042,7 @@ void Satlike::init_with_decimation_stepwise(bool through_decimation)
             init_solution[i]=deci->get_fix(i);
         }
     }
-    init(init_solution);
+    init(init_solution, !through_decimation);
 }
 
 long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, int max_search,
