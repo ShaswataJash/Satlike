@@ -31,7 +31,7 @@ class Decimation
     int* var_lit_count;
 
     int* local_opt;
-    int* global_opt;
+    //int* global_opt; //Shaswata: not used anywhere
     long long* org_clause_weight;
     long long top_clause_weight;
 
@@ -52,25 +52,23 @@ class Decimation
     int* clause_delete;
     int* clause_lit_count;
 
- public:
-    Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight,
-            std::mt19937& gr);
-    ~Decimation(){free_memory();}//Shaswata
-    int get_fix(int i){return (fix[i]);}//Shaswata - as member variables have been moved under private
-    void set_random_generator(std::mt19937& gr){ //Shaswata
-        generator = gr;
-    }
-    void make_space(int max_c, int max_v);
-    void free_memory();
-    void init(int* ls_local_opt, int* ls_global_opt, lit* ls_unit_clause, int ls_unit_clause_count, int* ls_clause_lit_count);
     void push_unit_clause_to_queue(lit tem_l);
     void assign(int v, int sense);
     void remove_unassigned_var(int v);
     void hunit_propagation();
     void sunit_propagation();
     void random_propagation();
-    void unit_prosess();
     bool choose_sense(int v);
+    void free_memory();
+
+ public:
+    Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight,
+            std::mt19937& gr);
+    ~Decimation(){free_memory();}//Shaswata
+    int get_fix(int i){return (fix[i]);}//Shaswata - as member variables have been moved under private
+    void make_space(int max_c, int max_v);
+    void init(int* ls_local_opt, int* ls_global_opt, lit* ls_unit_clause, int ls_unit_clause_count, int* ls_clause_lit_count);
+    void unit_prosess();
 };
 
 Decimation::Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight,
@@ -152,7 +150,7 @@ void Decimation::init(int* ls_local_opt, int* ls_global_opt, lit* ls_unit_clause
 
     //data structure of the instance
     local_opt=ls_local_opt;
-    global_opt=ls_global_opt;
+    //global_opt=ls_global_opt; //shaswata - not used anywhere
 
     for(int i=0;i<num_vars;++i)
     {

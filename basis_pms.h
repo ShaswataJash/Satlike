@@ -186,13 +186,6 @@ class Satlike
 	void settings(bool debug=false);
 	void update_hyper_param(int t, float sp, int hinc, int eta, int max_search);//Shaswata - for RL
 
-	double get_runtime()
-	{
-	    struct tms stop;
-	    times(&stop);
-	    return (double)(stop.tms_utime-start_time.tms_utime+stop.tms_stime-start_time.tms_stime)/sysconf(_SC_CLK_TCK);
-	}
-
 	unsigned int my_get_rand(){
 	    unsigned int r = (*generator)();
 	    return (r);
@@ -267,6 +260,13 @@ class Satlike
 	void set_init_sol(int var_id, int assignment){init_solution[var_id] = assignment;}
 
 	int get_feasible_flag_state() { return (feasible_flag);}
+
+	double get_runtime()
+	{
+	    struct tms stop;
+	    times(&stop);
+	    return (double)(stop.tms_utime-start_time.tms_utime+stop.tms_stime-start_time.tms_stime)/sysconf(_SC_CLK_TCK);
+	}
 
 	Satlike();
 	~Satlike(){free_memory();}
