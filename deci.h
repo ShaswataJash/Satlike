@@ -30,7 +30,7 @@ class Decimation
     lit** var_lit;
     int* var_lit_count;
 
-    int* local_opt;
+    //int* local_opt; //Shaswata: not used anywhere
     //int* global_opt; //Shaswata: not used anywhere
     long long* org_clause_weight;
     long long top_clause_weight;
@@ -72,7 +72,17 @@ class Decimation
 };
 
 Decimation::Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight,
-        std::mt19937& gr):generator(gr)
+        std::mt19937& gr):generator(gr),fix(NULL), num_vars(0),num_clauses(0),
+                h_true_score(NULL), h_false_score(NULL), hscore(NULL),
+                s_true_score(NULL), s_false_score(NULL), sscore(NULL),
+                clause_lit(NULL), var_lit(NULL), var_lit_count(NULL),
+                org_clause_weight(NULL), top_clause_weight(0),
+                hunit_clause_queue(NULL), sense_in_hunit_clause_queue(NULL),
+                hunit_beg_pointer(0), hunit_end_pointer(0),
+                sunit_clause_queue(NULL), sense_in_sunit_clause_queue(NULL),
+                sunit_beg_pointer(0), sunit_end_pointer(0),
+                unassigned_var(NULL), index_in_unassigned_var(NULL), unassigned_var_count(0),
+                clause_delete(NULL), clause_lit_count(NULL)
 {
     var_lit=ls_var_lit;
     var_lit_count=ls_var_lit_count;
@@ -90,25 +100,49 @@ void Decimation::make_space(int max_c, int max_v)
     max_v+=10;
 	
 	h_true_score=new long long[max_v];
+	memset(h_true_score, 0, sizeof(long long) * max_v);
+
     h_false_score=new long long[max_v];
+    memset(h_false_score, 0, sizeof(long long) * max_v);
+
     hscore=new long long[max_v];
+    memset(hscore, 0, sizeof(long long) * max_v);
+
     s_true_score=new long long[max_v];
+    memset(s_true_score, 0, sizeof(long long) * max_v);
+
     s_false_score=new long long[max_v];
+    memset(s_false_score, 0, sizeof(long long) * max_v);
+
     sscore=new long long[max_v];
+    memset(sscore, 0, sizeof(long long) * max_v);
 	
     fix=new int[max_v];
+    memset(fix, 0, sizeof(int) * max_v);
 
     hunit_clause_queue=new lit[max_v];
+    memset(hunit_clause_queue, 0, sizeof(lit) * max_v);
+
     sense_in_hunit_clause_queue=new int[max_v];
+    memset(sense_in_hunit_clause_queue, 0, sizeof(int) * max_v);
 
     sunit_clause_queue=new lit[max_v];
+    memset(sunit_clause_queue, 0, sizeof(lit) * max_v);
+
     sense_in_sunit_clause_queue=new int[max_v];
+    memset(sense_in_sunit_clause_queue, 0, sizeof(int) * max_v);
 
     unassigned_var=new int[max_v];
+    memset(unassigned_var, 0, sizeof(int) * max_v);
+
     index_in_unassigned_var=new int[max_v];
+    memset(index_in_unassigned_var, 0, sizeof(int) * max_v);
 
     clause_delete=new int[max_c];
+    memset(clause_delete, 0, sizeof(int) * max_c);
+
     clause_lit_count=new int[max_c];
+    memset(clause_lit_count, 0, sizeof(int) * max_c);
 }
 
 void Decimation::free_memory()
@@ -149,7 +183,7 @@ void Decimation::init(int* ls_local_opt, int* ls_global_opt, lit* ls_unit_clause
     unassigned_var_count=num_vars;
 
     //data structure of the instance
-    local_opt=ls_local_opt;
+    //local_opt=ls_local_opt;
     //global_opt=ls_global_opt; //shaswata - not used anywhere
 
     for(int i=0;i<num_vars;++i)

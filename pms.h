@@ -6,7 +6,9 @@
 #include <sstream>
 #include <array>
 
-Satlike::Satlike()
+Satlike::Satlike(): problem_weighted(0),partial(0),
+    max_clause_length(0), min_clause_length(0),
+    num_vars(0), num_clauses(0), num_hclauses(0), num_sclauses(0)
 {
     times(&start_time);//Shaswata
 
@@ -115,6 +117,7 @@ void Satlike::allocate_memory()
     int malloc_clause_length = num_clauses+10;
 
     unit_clause = new lit[malloc_clause_length];
+    memset(unit_clause, 0, sizeof(lit) * malloc_clause_length);
 
     var_lit = new lit* [malloc_var_length];
     for(int i=0; i< malloc_var_length; ++i){
@@ -122,6 +125,7 @@ void Satlike::allocate_memory()
     }
 
     var_lit_count = new int [malloc_var_length];
+    memset(var_lit_count, 0, sizeof(int) * malloc_var_length);
 
     clause_lit = new lit* [malloc_clause_length];
     for(int i=0; i< malloc_clause_length; ++i){
@@ -129,48 +133,50 @@ void Satlike::allocate_memory()
     }
 
     clause_lit_count = new int [malloc_clause_length];
+    memset(clause_lit_count, 0, sizeof(int) * malloc_clause_length);
 
     score = new long long [malloc_var_length];
+    memset(score, 0, sizeof(long long) * malloc_var_length);
 
     var_neighbor = new int* [malloc_var_length];
     for(int i=0; i< malloc_var_length; ++i){
         var_neighbor[i] = NULL;
     }
 
-    var_neighbor_count = new int [malloc_var_length];
-    time_stamp = new long long [malloc_var_length];
-    neighbor_flag = new int [malloc_var_length];
-    temp_neighbor = new int [malloc_var_length];
+    var_neighbor_count = new int [malloc_var_length];memset(var_neighbor_count, 0, sizeof(int) * malloc_var_length);
+    time_stamp = new long long [malloc_var_length];memset(time_stamp, 0, sizeof(long long) * malloc_var_length);
+    neighbor_flag = new int [malloc_var_length];memset(neighbor_flag, 0, sizeof(int) * malloc_var_length);
+    temp_neighbor = new int [malloc_var_length];memset(temp_neighbor, 0, sizeof(int) * malloc_var_length);
 
-    org_clause_weight = new long long [malloc_clause_length];
-    clause_weight = new long long [malloc_clause_length];
-    sat_count = new int [malloc_clause_length];
-    sat_var = new int [malloc_clause_length];
-    clause_selected_count = new long long [malloc_clause_length];
-    best_soft_clause = new int [malloc_clause_length];
+    org_clause_weight = new long long [malloc_clause_length];memset(org_clause_weight, 0, sizeof(long long) * malloc_clause_length);
+    clause_weight = new long long [malloc_clause_length];memset(clause_weight, 0, sizeof(long long) * malloc_clause_length);
+    sat_count = new int [malloc_clause_length];memset(sat_count, 0, sizeof(int) * malloc_clause_length);
+    sat_var = new int [malloc_clause_length];memset(sat_var, 0, sizeof(int) * malloc_clause_length);
+    clause_selected_count = new long long [malloc_clause_length];memset(clause_selected_count, 0, sizeof(long long) * malloc_clause_length);
+    best_soft_clause = new int [malloc_clause_length];memset(best_soft_clause, 0, sizeof(int) * malloc_clause_length);
 
-    hardunsat_stack = new int [malloc_clause_length];
-    index_in_hardunsat_stack = new int [malloc_clause_length];
-    softunsat_stack = new int [malloc_clause_length];
-    index_in_softunsat_stack = new int [malloc_clause_length];
+    hardunsat_stack = new int [malloc_clause_length];memset(hardunsat_stack, 0, sizeof(int) * malloc_clause_length);
+    index_in_hardunsat_stack = new int [malloc_clause_length];memset(index_in_hardunsat_stack, 0, sizeof(int) * malloc_clause_length);
+    softunsat_stack = new int [malloc_clause_length];memset(softunsat_stack, 0, sizeof(int) * malloc_clause_length);
+    index_in_softunsat_stack = new int [malloc_clause_length];memset(index_in_softunsat_stack, 0, sizeof(int) * malloc_clause_length);
 
-    unsatvar_stack = new int [malloc_var_length];
-    index_in_unsatvar_stack = new int [malloc_var_length];
-    unsat_app_count = new int [malloc_var_length];
+    unsatvar_stack = new int [malloc_var_length];memset(unsatvar_stack, 0, sizeof(int) * malloc_var_length);
+    index_in_unsatvar_stack = new int [malloc_var_length];memset(index_in_unsatvar_stack, 0, sizeof(int) * malloc_var_length);
+    unsat_app_count = new int [malloc_var_length];memset(unsat_app_count, 0, sizeof(int) * malloc_var_length);
 
-    goodvar_stack = new int [malloc_var_length];
-    already_in_goodvar_stack = new int[malloc_var_length];
+    goodvar_stack = new int [malloc_var_length];memset(goodvar_stack, 0, sizeof(int) * malloc_var_length);
+    already_in_goodvar_stack = new int[malloc_var_length];memset(already_in_goodvar_stack, 0, sizeof(int) * malloc_var_length);
 
-    cur_soln = new int [malloc_var_length];
-    best_soln = new int [malloc_var_length];
-    local_opt_soln = new int[malloc_var_length];
+    cur_soln = new int [malloc_var_length];memset(cur_soln, 0, sizeof(int) * malloc_var_length);
+    best_soln = new int [malloc_var_length];memset(best_soln, 0, sizeof(int) * malloc_var_length);
+    local_opt_soln = new int[malloc_var_length];memset(local_opt_soln, 0, sizeof(int) * malloc_var_length);
 
-    large_weight_clauses = new int [malloc_clause_length];
-    soft_large_weight_clauses = new int [malloc_clause_length];
-    already_in_soft_large_weight_stack = new int [malloc_clause_length];
+    large_weight_clauses = new int [malloc_clause_length];memset(large_weight_clauses, 0, sizeof(int) * malloc_clause_length);
+    soft_large_weight_clauses = new int [malloc_clause_length];memset(soft_large_weight_clauses, 0, sizeof(int) * malloc_clause_length);
+    already_in_soft_large_weight_stack = new int [malloc_clause_length];memset(already_in_soft_large_weight_stack, 0, sizeof(int) * malloc_clause_length);
 
-    best_array = new int [malloc_var_length];
-    temp_lit = new int [malloc_var_length];
+    best_array = new int [malloc_var_length];memset(best_array, 0, sizeof(int) * malloc_var_length);
+    temp_lit = new int [malloc_var_length];memset(temp_lit, 0, sizeof(int) * malloc_var_length);
 }
 
 void Satlike::free_memory()
@@ -414,6 +420,7 @@ void Satlike::build_neighbor_relation()
         neighbor_flag[v] = 0;
 
         var_neighbor[v] = new int[temp_neighbor_count];
+        memset(var_neighbor[v], 0, sizeof(int) * temp_neighbor_count);
         var_neighbor_count[v]=temp_neighbor_count;
 
         count = 0;
@@ -585,7 +592,7 @@ void Satlike::build_instance(const char *filename)
         if(clause_redundent==0) //the clause is not tautology
         {
             clause_lit[c] = new lit[clause_lit_count[c]+1];
-
+            memset(clause_lit[c], 0, sizeof(lit) * (clause_lit_count[c]+1));
             for(i=0; i<clause_lit_count[c]; ++i)
             {
                 clause_lit[c][i].clause_num = c;
@@ -623,6 +630,7 @@ void Satlike::build_instance(const char *filename)
     for (v=1; v<=num_vars; ++v)
     {
         var_lit[v] = new lit[var_lit_count[v]+1];
+        memset(var_lit[v], 0, sizeof(lit) * (var_lit_count[v]+1));
         var_lit_count[v] = 0;	//reset to 0, for build up the array
     }
     //scan all clauses to build up var literal arrays
