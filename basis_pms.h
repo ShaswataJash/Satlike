@@ -41,6 +41,81 @@ struct lit
     bool             sense;			//is 1 for true literals, 0 for false literals.
 };
 
+enum RAND_GEN_TYPE{
+    MINSTD = 0,
+    MT19937 = 1,
+    RANLUX24 = 2
+};
+
+class MyRandomGenerator{
+private:
+    std::minstd_rand* minstd_rand_generator;
+    std::mt19937* mt19937_generator;
+    std::ranlux24_base* ranlux24_base_generator;
+
+public:
+    explicit MyRandomGenerator(RAND_GEN_TYPE r, std::uint_fast32_t seed): minstd_rand_generator(NULL),
+    mt19937_generator(NULL), ranlux24_base_generator(NULL){
+        switch(r){
+
+        case MINSTD: minstd_rand_generator = new std::minstd_rand(seed);
+        break;
+
+        /*
+           std::array<unsigned int,std::mt19937::state_size> myarray;
+           myarray.fill(seed);
+           std::seed_seq initial_state_of_mt19937 (myarray.cbegin(), myarray.cend());
+           mt19937_generator = new std::mt19937(initial_state_of_mt19937);
+         */
+        case MT19937: mt19937_generator = new std::mt19937(seed);
+        break;
+
+        case RANLUX24: ranlux24_base_generator = new std::ranlux24_base(seed);
+        break;
+
+        default:assert(0);
+        }
+    }
+
+    MyRandomGenerator(const MyRandomGenerator&) = delete;
+    MyRandomGenerator& operator=(const MyRandomGenerator&) = delete;
+
+    std::uint_fast32_t get_next_random_num(){
+        if(minstd_rand_generator != NULL){
+            return ((*minstd_rand_generator)());
+        }
+
+        if(mt19937_generator != NULL){
+            return ((*mt19937_generator)());
+        }
+
+        if(ranlux24_base_generator != NULL){
+            return ((*ranlux24_base_generator)());
+        }
+
+        assert(0);
+        return (0);
+    }
+
+    ~MyRandomGenerator(){
+        if(minstd_rand_generator != NULL){
+            delete minstd_rand_generator;
+            minstd_rand_generator = NULL;
+        }
+
+        if(mt19937_generator != NULL){
+            delete mt19937_generator;
+            mt19937_generator = NULL;
+        }
+
+        if(ranlux24_base_generator != NULL){
+            delete ranlux24_base_generator;
+            ranlux24_base_generator = NULL;
+        }
+
+    }
+};
+
 class Satlike
 {
 	private:
@@ -167,7 +242,7 @@ class Satlike
 	vector<int> init_solution; //Shaswata
 
 	//Shaswata - not to depend upon any global state within standard lib (becomes problematic from python)
-	std::mt19937* generator;
+	MyRandomGenerator* generator;
 
 	//function used in algorithm
 	void build_neighbor_relation();
@@ -178,7 +253,7 @@ class Satlike
 	void update_clause_weights();
 	void unsat(int clause);
 	void sat(int clause);
-	void init(vector<int>& init_solution, bool override_init_sol=false);//Shaswata: added additional override_init_sol
+	void init(vector<int>& i_solution, bool copy_best_sol=false, bool copy_init_sol=false);//Shaswata: added additional params
 	void flip(int flipvar);
 	void update_goodvarstack1(int flipvar);
 	void update_goodvarstack2(int flipvar);
@@ -187,7 +262,8 @@ class Satlike
 	void update_hyper_param(int t, float sp, int hinc, int eta, int max_search);//Shaswata - for RL
 
 	unsigned int my_get_rand(){
-	    unsigned int r = (*generator)();
+	    unsigned int r = generator->get_next_random_num();
+	    //cout << r << " " << flush;
 	    return (r);
 	}
 
@@ -212,15 +288,16 @@ class Satlike
 	        int max_time_to_run=300,
 	        int verbose = 0, bool verification_to_be_done = false);
 
-	void algo_init(unsigned int seed, bool todebug);//Shaswata - interface for python
-	void init_with_decimation_stepwise(bool through_decimation=true);//Shaswata	- interface for python
+	void algo_init(unsigned int seed, RAND_GEN_TYPE rtype, bool todebug);//Shaswata - interface for python
+	void init_with_decimation_stepwise(bool copy_best_sol, bool copy_init_sol);//Shaswata	- interface for python
 	long long local_search_stepwise(int t, float sp,  int hinc, int eta, int max_search,
 	        unsigned int current_step, bool adaptive_search_extent=true, int verbose=0);//Shaswata - interface for python
 
 	//Following function is to compare behavior of our stepwise modification with local_search_with_decimation
 	void local_search_with_decimation_using_steps(unsigned int seed, int maxTimeToRunInSec=300,
 	        int t=-1, float sp=-1,  int hinc=-1, int eta=-1, int max_search = -1,
-	        bool adaptive_search_extent=true, int verbose_level=0, bool verification_to_be_done = false);//Shaswata
+	        bool adaptive_search_extent=true, bool emphasize_exploit=false, RAND_GEN_TYPE rType=MINSTD,
+	        int verbose_level=0, bool verification_to_be_done = false);//Shaswata
 
 	void simple_print();
 	void print_best_solution(bool print_var_assign = false);

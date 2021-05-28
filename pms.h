@@ -75,6 +75,17 @@ void Satlike::settings(bool debug)
     rwprob=0.1;
     smooth_probability=0.01;
 
+    //==========================
+    double mean_weight = total_soft_weight / num_sclauses;
+    double sum_of_deviation_sq = 0;
+    for (int c = 0; c<num_clauses; c++){
+        if (org_clause_weight[c]!=top_clause_weight){
+            sum_of_deviation_sq += pow((org_clause_weight[c] - mean_weight),2);
+        }
+    }
+    double standard_dev = sqrt(sum_of_deviation_sq / num_sclauses);
+    //==========================
+
     if((top_clause_weight/num_sclauses)>10000)
     {
         h_inc=300;
@@ -98,7 +109,8 @@ void Satlike::settings(bool debug)
         cout << "h_inc=" << h_inc << " softclause_weight_threshold=" << softclause_weight_threshold <<endl;
         cout << "hd_count_threshold=" << hd_count_threshold << " smooth_probability=" << smooth_probability << endl;
         cout << "var_count=" << num_vars << " hclause_count=" << num_hclauses << " sclause_count=" << num_sclauses << endl;
-        cout << "max_soft_wt=" << top_clause_weight   << " total_soft_wt=" << total_soft_weight << endl;
+        cout << "top_clause_weight=" << top_clause_weight   << " total_soft_wt=" << total_soft_weight << endl;
+        cout << "mean soft-weight=" <<mean_weight << " standard_dev=" << standard_dev << endl;
     }
 }
 
@@ -625,6 +637,9 @@ void Satlike::build_instance(const char *filename)
 
     infile.close();
 
+    if(top_clause_weight != -1){
+       assert (top_clause_weight == (total_soft_weight + 1));//Shaswata - inserted for defensive check
+    }
 
     //creat var literal arrays
     for (v=1; v<=num_vars; ++v)
@@ -655,7 +670,7 @@ void Satlike::build_instance(const char *filename)
     opt_unsat_weight=total_soft_weight+1;
 }
 
-void Satlike::init(vector<int>& i_solution, bool override_init_sol)
+void Satlike::init(vector<int>& i_solution, bool copy_best_sol, bool copy_init_sol)
 {
     int 		v,c;
     int			i,j;
@@ -701,33 +716,53 @@ void Satlike::init(vector<int>& i_solution, bool override_init_sol)
             }
         }
     }
-    //init solution
-    if((feasible_flag==1) && !override_init_sol) //Shaswata - included override_init_sol
-    {
-        for (v = 1; v <= num_vars; v++)
-        {
+
+    if (copy_best_sol){
+
+        for (v = 1; v <= num_vars; v++){
             cur_soln[v]=best_soln[v];
             time_stamp[v] = 0;
             unsat_app_count[v] = 0;
         }
-        feasible_flag=2;
-    }
-    else if((i_solution.size()==0) && !override_init_sol)
-    {
-        for (v = 1; v <= num_vars; v++) 
-        {
-            cur_soln[v]=0;
-            time_stamp[v] = 0;
-            unsat_app_count[v] = 0;
-        }
-    }
-    else
-    {
-        for (v = 1; v <= num_vars; v++) 
-        {
+
+    } else if (copy_init_sol) {
+
+        for (v = 1; v <= num_vars; v++){
             cur_soln[v]=i_solution[v];
             time_stamp[v] = 0;
             unsat_app_count[v] = 0;
+        }
+
+    } else { //ORIGINAL
+
+        //init solution
+        if(feasible_flag==1)
+        {
+            for (v = 1; v <= num_vars; v++)
+            {
+                cur_soln[v]=best_soln[v];
+                time_stamp[v] = 0;
+                unsat_app_count[v] = 0;
+            }
+            feasible_flag=2;
+        }
+        else if(i_solution.size()==0)
+        {
+            for (v = 1; v <= num_vars; v++)
+            {
+                cur_soln[v]=0;
+                time_stamp[v] = 0;
+                unsat_app_count[v] = 0;
+            }
+        }
+        else
+        {
+            for (v = 1; v <= num_vars; v++)
+            {
+                cur_soln[v]=i_solution[v];
+                time_stamp[v] = 0;
+                unsat_app_count[v] = 0;
+            }
         }
     }
 
@@ -1014,7 +1049,7 @@ void Satlike::print_best_solution(bool print_var_assign)
     cout << flush;
 }
 
-void Satlike::algo_init(unsigned int seed, bool debug)
+void Satlike::algo_init(unsigned int seed, RAND_GEN_TYPE rType, bool debug)
 {
     //Shaswata: moving from build_instance() to here so that same satlike instance can be used multiple times
     best_soln_feasible=0;
@@ -1026,19 +1061,16 @@ void Satlike::algo_init(unsigned int seed, bool debug)
     assert(generator == NULL);
     assert(deci == NULL);
 
-    std::array<unsigned int,std::mt19937::state_size> myarray;
-    myarray.fill(seed);
-    std::seed_seq initial_state_of_mt19937 (myarray.cbegin(), myarray.cend());
-    generator = new std::mt19937(initial_state_of_mt19937);//Shaswata
+    generator = new MyRandomGenerator(rType, seed);//Shaswata
 
     deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight,
                         *generator);
     deci->make_space(num_clauses,num_vars);
 }
 
-void Satlike::init_with_decimation_stepwise(bool through_decimation)
+void Satlike::init_with_decimation_stepwise(bool copy_best_sol, bool copy_init_sol)
 {
-    if(through_decimation && (feasible_flag!=1))
+    if( (!copy_best_sol) && (!copy_init_sol))
     {
         deci->init(local_opt_soln,best_soln,unit_clause,unit_clause_count,clause_lit_count);
 
@@ -1050,7 +1082,7 @@ void Satlike::init_with_decimation_stepwise(bool through_decimation)
             init_solution[i]=deci->get_fix(i);
         }
     }
-    init(init_solution, !through_decimation);
+    init(init_solution, copy_best_sol, copy_init_sol);
 }
 
 long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, int max_search,
@@ -1110,14 +1142,35 @@ long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, in
 
 void Satlike::local_search_with_decimation_using_steps(unsigned int seed, int maxTimeToRunInSec,
         int t, float sp,  int hinc, int eta, int max_search,
-        bool adaptive_search_extent, int verbose_level, bool verification_to_be_done)
+        bool adaptive_search_extent, bool emphasize_exploit, RAND_GEN_TYPE rType,
+        int verbose_level, bool verification_to_be_done)
 {
     long long iteration_count = 0;
-    algo_init(seed, verbose_level > 0);
+    algo_init(seed, rType, verbose_level > 0);
     long long last_soft_unsat_weight = get_total_soft_weight()+1;
+    bool exploit_cycle = true;
     for(int tries=1;tries<max_tries;++tries)
     {
-        init_with_decimation_stepwise();
+        if (last_soft_unsat_weight < (get_total_soft_weight()+1)){
+            //Shaswata: creating similar effect of exploitation in original algorithm when tries=2
+            //That was acheived using feasible_flag. If feasible_flag=1, then instead of decimation,
+            //just best sol is copied to current sol to continue exploitation
+            if(exploit_cycle){ //alternate between exploit and explore
+                init_with_decimation_stepwise(true, false);
+            }else{
+                init_with_decimation_stepwise(false, false);
+            }
+
+            if (emphasize_exploit){
+                exploit_cycle = true;
+            } else{
+                exploit_cycle = !exploit_cycle;
+            }
+
+        }else{
+            init_with_decimation_stepwise(false, false);
+        }
+
 
         for (unsigned int current_step = 1; current_step<get_max_flips(); ++current_step)
         {
@@ -1154,7 +1207,8 @@ void Satlike::local_search_with_decimation_using_steps(unsigned int seed, int ma
             }
         }
 
-        if(verbose_level > 0) cout<<"c Episode completed iteration_count=" << iteration_count << endl << flush;
+        if(verbose_level > 0) cout<<"c Episode completed iteration_count=" << iteration_count
+                << " next-episode will be exploited="<< exploit_cycle << endl << flush;
     }
 }
 
@@ -1164,11 +1218,7 @@ void Satlike::local_search_with_decimation(unsigned int seed, vector<int>& i_sol
     settings(verbose > 0);
 
     assert(generator == NULL);
-
-    std::array<unsigned int,std::mt19937::state_size> myarray;
-    myarray.fill(seed);
-    std::seed_seq initial_state_of_mt19937 (myarray.cbegin(), myarray.cend());
-    generator = new std::mt19937(initial_state_of_mt19937);//Shaswata
+    generator = new MyRandomGenerator(MINSTD, seed);//Shaswata
 
     Decimation l_deci(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight, *generator);
     l_deci.make_space(num_clauses,num_vars);

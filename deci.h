@@ -8,10 +8,10 @@ using namespace std;
 class Decimation
 {
  private://Shaswata
-    std::mt19937& generator;
+    MyRandomGenerator& generator;
 
     unsigned int my_get_rand(){
-        return (generator());
+        return (generator.get_next_random_num());
     }
 
     int* fix;
@@ -63,7 +63,7 @@ class Decimation
 
  public:
     Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight,
-            std::mt19937& gr);
+            MyRandomGenerator& gr);
     ~Decimation(){free_memory();}//Shaswata
     int get_fix(int i){return (fix[i]);}//Shaswata - as member variables have been moved under private
     void make_space(int max_c, int max_v);
@@ -72,7 +72,7 @@ class Decimation
 };
 
 Decimation::Decimation(lit** ls_var_lit, int* ls_var_lit_count, lit** ls_clause_lit, long long* ls_org_clause_weight, long long ls_top_clause_weight,
-        std::mt19937& gr):generator(gr),fix(NULL), num_vars(0),num_clauses(0),
+        MyRandomGenerator& gr):generator(gr),fix(NULL), num_vars(0),num_clauses(0),
                 h_true_score(NULL), h_false_score(NULL), hscore(NULL),
                 s_true_score(NULL), s_false_score(NULL), sscore(NULL),
                 clause_lit(NULL), var_lit(NULL), var_lit_count(NULL),

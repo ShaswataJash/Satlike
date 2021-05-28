@@ -31,17 +31,23 @@ int main(int argc, char* argv[])
 	bool print_final_var_assignment = false;
 	bool adaptive_search_extent = false;
 	int initial_search = 0;
+	bool emphasize_exploit = false;
+	RAND_GEN_TYPE rType = MINSTD;
 
 	// Shut GetOpt error messages down (return '?'):
 	opterr = 0;
 	int opt;
 	// Retrieve the options:
 	cout << "SELECTED-OPTIONS: ";
-	while ( (opt = getopt(argc, argv, "av:pcm:or:t:s:h:e:z:i:")) != -1 ) {  // for each option...
+	while ( (opt = getopt(argc, argv, "axv:pcm:or:t:s:h:e:z:i:R:")) != -1 ) {  // for each option...
 	    switch ( opt ) {
 	    case 'a':
 	        adaptive_search_extent = true;
 	        cout << " adaptive_search_extent";
+	        break;
+	    case 'x':
+	        emphasize_exploit = true;
+	        cout << " emphasize_exploit";
 	        break;
 	    case 'v':
 	        verbose_level = atoi(optarg);
@@ -91,6 +97,10 @@ int main(int argc, char* argv[])
 	        initial_search = atoi(optarg);
 	        cout << " initial_search=" << initial_search;
 	        break;
+	    case 'R':
+	        rType = (RAND_GEN_TYPE)(atoi(optarg));
+	        cout << " rType=" << rType;
+	        break;
 	    case '?':  // unknown option...
 	        cerr << "Unknown option: '" << char(optopt) << "'!" << endl;
 	        break;
@@ -101,10 +111,10 @@ int main(int argc, char* argv[])
 
 	assert(optind == (argc-1));
 
+	s.build_instance(argv[optind]);
 	if(initial_search > 0){
 	    s.set_initial_max_flip(initial_search);
 	}
-	s.build_instance(argv[optind]);
 
 	if(originalCode){
 	    vector<int> init_solution;
@@ -112,7 +122,8 @@ int main(int argc, char* argv[])
 	            max_time_to_run, verbose_level, verification_to_be_done); //ORIGINAL
 	}else{
 	    s.local_search_with_decimation_using_steps(seed, max_time_to_run,
-	            t, sp, hinc, eta, max_search, adaptive_search_extent, verbose_level, verification_to_be_done);
+	            t, sp, hinc, eta, max_search, adaptive_search_extent, emphasize_exploit,
+	            rType, verbose_level, verification_to_be_done);
 	}
 	s.print_best_solution(print_final_var_assignment);
 	s.free_memory();
