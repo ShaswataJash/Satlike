@@ -76,14 +76,14 @@ void Satlike::settings(bool debug)
     smooth_probability=0.01;
 
     //==========================
-    double mean_weight = total_soft_weight / num_sclauses;
+    /*double mean_weight = total_soft_weight / num_sclauses;
     double sum_of_deviation_sq = 0;
     for (int c = 0; c<num_clauses; c++){
         if (org_clause_weight[c]!=top_clause_weight){
             sum_of_deviation_sq += pow((org_clause_weight[c] - mean_weight),2);
         }
     }
-    double standard_dev = sqrt(sum_of_deviation_sq / num_sclauses);
+    double standard_dev = sqrt(sum_of_deviation_sq / num_sclauses);*/
     //==========================
 
     if((top_clause_weight/num_sclauses)>10000)
@@ -110,7 +110,7 @@ void Satlike::settings(bool debug)
         cout << "hd_count_threshold=" << hd_count_threshold << " smooth_probability=" << smooth_probability << endl;
         cout << "var_count=" << num_vars << " hclause_count=" << num_hclauses << " sclause_count=" << num_sclauses << endl;
         cout << "top_clause_weight=" << top_clause_weight   << " total_soft_wt=" << total_soft_weight << endl;
-        cout << "mean soft-weight=" <<mean_weight << " standard_dev=" << standard_dev << endl;
+        //cout << "mean soft-weight=" <<mean_weight << " standard_dev=" << standard_dev << endl;
     }
 }
 
@@ -1049,7 +1049,7 @@ void Satlike::print_best_solution(bool print_var_assign)
     cout << flush;
 }
 
-void Satlike::algo_init(unsigned int seed, RAND_GEN_TYPE rType, bool debug)
+void Satlike::algo_init(unsigned int seed, RAND_GEN_TYPE rType, bool recreate_rand_generator, bool debug)
 {
     //Shaswata: moving from build_instance() to here so that same satlike instance can be used multiple times
     best_soln_feasible=0;
@@ -1058,10 +1058,20 @@ void Satlike::algo_init(unsigned int seed, RAND_GEN_TYPE rType, bool debug)
     //===================================
 
     settings(debug);
-    assert(generator == NULL);
-    assert(deci == NULL);
 
-    generator = new MyRandomGenerator(rType, seed);//Shaswata
+    if((generator != NULL) && (recreate_rand_generator)){
+        delete generator;
+        generator = NULL;
+    }
+
+    if(deci != NULL){
+        delete deci;
+        deci = NULL;
+    }
+
+    if(generator == NULL){
+        generator = new MyRandomGenerator(rType, seed);//Shaswata
+    }
 
     deci = new Decimation(var_lit,var_lit_count,clause_lit,org_clause_weight,top_clause_weight,
                         *generator);
@@ -1142,11 +1152,12 @@ long long Satlike::local_search_stepwise(int t, float sp,  int hinc, int eta, in
 
 void Satlike::local_search_with_decimation_using_steps(unsigned int seed, int maxTimeToRunInSec,
         int t, float sp,  int hinc, int eta, int max_search,
-        bool adaptive_search_extent, bool emphasize_exploit, RAND_GEN_TYPE rType,
+        bool adaptive_search_extent, RAND_GEN_TYPE rType,
         int verbose_level, bool verification_to_be_done)
 {
     long long iteration_count = 0;
-    algo_init(seed, rType, verbose_level > 0);
+    unsigned int changing_seed = seed;
+    algo_init(seed, rType, true, verbose_level > 0);
     long long last_soft_unsat_weight = get_total_soft_weight()+1;
     bool exploit_cycle = true;
     for(int tries=1;tries<max_tries;++tries)
@@ -1158,20 +1169,19 @@ void Satlike::local_search_with_decimation_using_steps(unsigned int seed, int ma
             if(exploit_cycle){ //alternate between exploit and explore
                 init_with_decimation_stepwise(true, false);
             }else{
+                changing_seed += 4096;
+                algo_init(changing_seed, rType, true, false);
                 init_with_decimation_stepwise(false, false);
-            }
-
-            if (emphasize_exploit){
-                exploit_cycle = true;
-            } else{
-                exploit_cycle = !exploit_cycle;
             }
 
         }else{
             init_with_decimation_stepwise(false, false);
+            if(verbose_level > 0){
+                cout << "randomization oppurtunity in decimation= " << deci->get_randomization_oppurtunity() << endl << flush;
+            }
         }
 
-
+        bool improvement_observed = false;
         for (unsigned int current_step = 1; current_step<get_max_flips(); ++current_step)
         {
             ++iteration_count;
@@ -1186,6 +1196,7 @@ void Satlike::local_search_with_decimation_using_steps(unsigned int seed, int ma
                     verbose_level);
 
             if ((result >= 0) && (result < last_soft_unsat_weight)) {
+                improvement_observed = true;
                 if(verbose_level > 0){
                     float fractSat = (float)(get_total_soft_weight() - result) / (float)get_total_soft_weight();
                     cout << "c iteration_count=" << iteration_count << " tries=" << tries << " current_step=" << current_step <<
@@ -1205,6 +1216,10 @@ void Satlike::local_search_with_decimation_using_steps(unsigned int seed, int ma
                 if (verbose_level > 0) cout<<"c time exhausted iteration_count=" << iteration_count << endl << flush;
                 return;
             }
+        }
+
+        if (last_soft_unsat_weight < (get_total_soft_weight()+1)){
+            exploit_cycle = (improvement_observed) ? true: false;
         }
 
         if(verbose_level > 0) cout<<"c Episode completed iteration_count=" << iteration_count

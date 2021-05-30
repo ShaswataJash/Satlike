@@ -288,7 +288,7 @@ class Satlike
 	        int max_time_to_run=300,
 	        int verbose = 0, bool verification_to_be_done = false);
 
-	void algo_init(unsigned int seed, RAND_GEN_TYPE rtype, bool todebug);//Shaswata - interface for python
+	void algo_init(unsigned int seed, RAND_GEN_TYPE rtype, bool recreate_rand_generator, bool todebug);//Shaswata - interface for python
 	void init_with_decimation_stepwise(bool copy_best_sol, bool copy_init_sol);//Shaswata	- interface for python
 	long long local_search_stepwise(int t, float sp,  int hinc, int eta, int max_search,
 	        unsigned int current_step, bool adaptive_search_extent=true, int verbose=0);//Shaswata - interface for python
@@ -296,7 +296,7 @@ class Satlike
 	//Following function is to compare behavior of our stepwise modification with local_search_with_decimation
 	void local_search_with_decimation_using_steps(unsigned int seed, int maxTimeToRunInSec=300,
 	        int t=-1, float sp=-1,  int hinc=-1, int eta=-1, int max_search = -1,
-	        bool adaptive_search_extent=true, bool emphasize_exploit=false, RAND_GEN_TYPE rType=MINSTD,
+	        bool adaptive_search_extent=true, RAND_GEN_TYPE rType=MINSTD,
 	        int verbose_level=0, bool verification_to_be_done = false);//Shaswata
 
 	void simple_print();

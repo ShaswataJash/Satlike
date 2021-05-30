@@ -31,7 +31,6 @@ int main(int argc, char* argv[])
 	bool print_final_var_assignment = false;
 	bool adaptive_search_extent = false;
 	int initial_search = 0;
-	bool emphasize_exploit = false;
 	RAND_GEN_TYPE rType = MINSTD;
 
 	// Shut GetOpt error messages down (return '?'):
@@ -39,15 +38,11 @@ int main(int argc, char* argv[])
 	int opt;
 	// Retrieve the options:
 	cout << "SELECTED-OPTIONS: ";
-	while ( (opt = getopt(argc, argv, "axv:pcm:or:t:s:h:e:z:i:R:")) != -1 ) {  // for each option...
+	while ( (opt = getopt(argc, argv, "av:pcm:or:t:s:h:e:z:i:R:")) != -1 ) {  // for each option...
 	    switch ( opt ) {
 	    case 'a':
 	        adaptive_search_extent = true;
 	        cout << " adaptive_search_extent";
-	        break;
-	    case 'x':
-	        emphasize_exploit = true;
-	        cout << " emphasize_exploit";
 	        break;
 	    case 'v':
 	        verbose_level = atoi(optarg);
@@ -122,7 +117,7 @@ int main(int argc, char* argv[])
 	            max_time_to_run, verbose_level, verification_to_be_done); //ORIGINAL
 	}else{
 	    s.local_search_with_decimation_using_steps(seed, max_time_to_run,
-	            t, sp, hinc, eta, max_search, adaptive_search_extent, emphasize_exploit,
+	            t, sp, hinc, eta, max_search, adaptive_search_extent,
 	            rType, verbose_level, verification_to_be_done);
 	}
 	s.print_best_solution(print_final_var_assignment);
